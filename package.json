@@ -32,6 +32,7 @@
     "@distributed-social-platform/shared-kernel": "*",
     "@elastic/elasticsearch": "^8.15.0",
     "@fastify/compress": "^8.3.1",
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^13.0.2",
     "@nestjs/common": "^11.1.24",
