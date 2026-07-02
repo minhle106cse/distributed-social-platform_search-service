@@ -1,0 +1,31 @@
+// search-service owns search_db (separate from core_db/auth_db/notification_db).
+// Chunks + embeddings for semantic search. Content is snapshotted from the
+// KnowledgePublished event — NO cross-DB join into core_db.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated"
+}
+
+// url injected via prisma.config.ts (Prisma v7 — url not set here)
+datasource db {
+  provider = "postgresql"
+}
+
+model KnowledgeChunk {
+  id              String   @id @default(uuid())
+  knowledgeItemId String   @map("knowledge_item_id")
+  orgId           String   @map("org_id")
+  spaceId         String   @map("space_id")
+  chunkIndex      Int      @map("chunk_index")
+  content         String
+  titleSnapshot   String   @map("title_snapshot")
+  // pgvector column (dim 768 = nomic-embed-text). Prisma has no native vector
+  // type → Unsupported; read/write via raw SQL. HNSW index via raw migration.
+  embedding       Unsupported("vector(768)")?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([knowledgeItemId, chunkIndex])
+  @@index([orgId])
+  @@map("knowledge_chunks")
+}

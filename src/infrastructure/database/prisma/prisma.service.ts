@@ -1,0 +1,26 @@
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@/generated/index'
+
+// search_db: chunks + pgvector embeddings; no soft-delete needed.
+@Injectable()
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
+  readonly client: PrismaClient
+
+  constructor() {
+    const pool = new Pool({
+      connectionString: process.env.SEARCH_DATABASE_URL,
+    })
+    const adapter = new PrismaPg(pool)
+    this.client = new PrismaClient({ adapter })
+  }
+
+  async onModuleInit() {
+    await this.client.$connect()
+  }
+
+  async onModuleDestroy() {
+    await this.client.$disconnect()
+  }
+}
