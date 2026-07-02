@@ -21,6 +21,10 @@ export class HttpEmbeddingService implements IEmbeddingService {
     this.model = config.get<string>('env.embeddingModel') ?? 'nomic-embed-text'
   }
 
+  // A 100k-char body chunks into ~60+ texts; sending them in one request gives
+  // the embedder an unbounded payload and unbounded latency. Cap each request.
+  private static readonly BATCH_SIZE = 16
+
   async embed(text: string): Promise<number[]> {
     const [vector] = await this.embedBatch([text])
     return vector
@@ -29,6 +33,15 @@ export class HttpEmbeddingService implements IEmbeddingService {
   async embedBatch(texts: string[]): Promise<number[][]> {
     if (texts.length === 0) return []
 
+    const out: number[][] = []
+    for (let i = 0; i < texts.length; i += HttpEmbeddingService.BATCH_SIZE) {
+      const slice = texts.slice(i, i + HttpEmbeddingService.BATCH_SIZE)
+      out.push(...(await this.embedSlice(slice)))
+    }
+    return out
+  }
+
+  private async embedSlice(texts: string[]): Promise<number[][]> {
     const res = await fetch(`${this.baseUrl}/api/embed`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

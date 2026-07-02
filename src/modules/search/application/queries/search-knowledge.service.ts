@@ -53,11 +53,12 @@ export class SearchKnowledgeService {
     summarize: boolean,
   ): Promise<SearchResult> {
     const [queryVec] = await this.embedding.embedBatch([query])
-    const fetch = Math.max(topK * 2, 10)
+    // NOT named `fetch` — that would shadow the global fetch in this scope.
+    const fetchCount = Math.max(topK * 2, 10)
 
     const [semanticChunks, keywordHits] = await Promise.all([
-      this.chunkRepo.semanticSearch(orgId, queryVec, fetch),
-      this.keywordRepo.search(orgId, query, fetch).catch((err: unknown) => {
+      this.chunkRepo.semanticSearch(orgId, queryVec, fetchCount),
+      this.keywordRepo.search(orgId, query, fetchCount).catch((err: unknown) => {
         this.logger.warn({ err }, 'Keyword search failed — degrading to semantic-only')
         return [] as KeywordHit[]
       }),
