@@ -7,7 +7,7 @@ export const envValidationSchema = z.object({
   SEARCH_DATABASE_URL: z.string().url(),
   JWT_PUBLIC_KEY: z.string().min(100),
   KAFKA_BROKERS: z.string().default('localhost:9092'),
-  KAFKA_CLIENT_ID: z.string().default('search-service'),
+  SEARCH_KAFKA_CLIENT_ID: z.string().default('search-service'),
   KAFKA_SEARCH_INDEXER_GROUP: z.string().default('search-service-indexer-group'),
   KAFKA_CONSUMER_MAX_RETRIES: z.coerce.number().int().min(0).default(3),
   KAFKA_CONSUMER_RETRY_BACKOFF_MS: z.coerce.number().int().min(0).default(500),

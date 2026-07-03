@@ -7,7 +7,7 @@ export const envConfig = registerAs('env', () => ({
   // JWT_PUBLIC_KEY is base64-encoded in .env (same pattern as core-api)
   jwtPublicKey: Buffer.from(process.env.JWT_PUBLIC_KEY!, 'base64').toString('utf-8'),
   kafkaBrokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(','),
-  kafkaClientId: process.env.KAFKA_CLIENT_ID ?? 'search-service',
+  kafkaClientId: process.env.SEARCH_KAFKA_CLIENT_ID ?? 'search-service',
   // Own consumer group (concern = search indexing) — separate from notification.
   kafkaSearchIndexerGroup: process.env.KAFKA_SEARCH_INDEXER_GROUP ?? 'search-service-indexer-group',
   kafkaConsumerMaxRetries: Number(process.env.KAFKA_CONSUMER_MAX_RETRIES ?? 3),
