@@ -21,6 +21,21 @@ export async function setupFastify(app: NestFastifyApplication) {
   // NOT @fastify/rate-limit (see microservice_architecture.md).
   await fastify.register(helmet)
 
+  // /health and /metrics: skip compression. Not a fix for a reproduced bug
+  // here — auth-service hit a deterministic @fastify/compress bug on its
+  // /metrics route (gzip requests truncated to 0 bytes under Prometheus's
+  // 15s scrape cadence); this service never showed the symptom, but these
+  // two routes gain nothing from compression (small, low-traffic, infra-only)
+  // so disabling it removes any chance of the same class of bug here too.
+  // NestJS's @Get() doesn't expose Fastify's route `config` directly, so set
+  // it via onRoute (must run before compress registers its own onRoute hook,
+  // which reads routeOptions.config.compress at route-registration time).
+  fastify.addHook('onRoute', (routeOptions) => {
+    if (routeOptions.url === '/health' || routeOptions.url === '/metrics') {
+      routeOptions.config = { ...routeOptions.config, compress: false }
+    }
+  })
+
   await fastify.register(compress, {
     encodings: ['gzip', 'deflate', 'br'],
   })
