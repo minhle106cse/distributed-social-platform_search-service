@@ -3,10 +3,10 @@ import { Prisma } from '@/generated'
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service'
 import { chunksIndexedCounter } from '@/infrastructure/observability/search.metrics'
 import type {
-  InsertChunkRow,
   ISearchChunkRepository,
+  InsertChunkRow,
   SearchHit,
-} from '../../application/repositories/search-chunk.repository.interface'
+} from '../../domain/repositories/search-chunk.repository'
 
 // pgvector has no Prisma type — vectors are read/written via raw SQL. A vector
 // literal is '[f1,f2,...]' cast to ::vector.

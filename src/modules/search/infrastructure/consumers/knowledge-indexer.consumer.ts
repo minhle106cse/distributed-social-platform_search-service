@@ -1,7 +1,11 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
-import { EventRouter, ResilientEventConsumer } from '@distributed-social-platform/shared-kernel'
+import {
+  EventRouter,
+  ResilientEventConsumer,
+  KafkaTopic,
+} from '@distributed-social-platform/shared-kernel'
 import { KafkaClientService } from '@/infrastructure/kafka/kafka-client.service'
 import { DeadLetterProducer } from '@/infrastructure/kafka/dead-letter.producer'
 import { handlerRetryCounter } from '@/infrastructure/observability/search.metrics'
@@ -23,17 +27,16 @@ export class KnowledgeIndexerConsumer implements OnModuleInit, OnModuleDestroy {
     indexKnowledgeHandler: IndexKnowledgeHandler,
     @InjectPinoLogger(KnowledgeIndexerConsumer.name) logger: PinoLogger,
   ) {
-    const groupId =
-      config.get<string>('env.kafkaSearchIndexerGroup') ?? 'search-service-indexer-group'
+    const groupId = config.getOrThrow<string>('env.kafkaSearchIndexerGroup')
 
     this.runner = new ResilientEventConsumer({
       consumer: kafkaClient.client.consumer({ groupId }),
-      topics: ['knowledge-events'],
+      topics: [KafkaTopic.KNOWLEDGE_EVENTS],
       router: new EventRouter(logger).register(indexKnowledgeHandler),
       deadLetter,
       logger,
-      maxRetries: config.get<number>('env.kafkaConsumerMaxRetries') ?? 3,
-      retryBackoffMs: config.get<number>('env.kafkaConsumerRetryBackoffMs') ?? 500,
+      maxRetries: config.getOrThrow<number>('env.kafkaConsumerMaxRetries'),
+      retryBackoffMs: config.getOrThrow<number>('env.kafkaConsumerRetryBackoffMs'),
       onRetry: (eventType) => handlerRetryCounter.inc({ eventType }),
     })
   }

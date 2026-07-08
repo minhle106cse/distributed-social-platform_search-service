@@ -15,6 +15,12 @@ export interface KeywordHit {
 
 export const KEYWORD_SEARCH_REPOSITORY = Symbol('KEYWORD_SEARCH_REPOSITORY')
 
+/**
+ * The Elasticsearch keyword index — same shape as ISearchChunkRepository: a
+ * write-model (`indexItem`, fed by the IndexKnowledge event handler) with an
+ * internal read (`search`, whose `KeywordHit[]` feeds RRF fusion, not the HTTP
+ * response). Lives in domain/repositories/ for the same reason.
+ */
 export interface IKeywordSearchRepository {
   /** Upsert an item document into its per-tenant index (idempotent by itemId). */
   indexItem(doc: IndexItemDoc): Promise<void>

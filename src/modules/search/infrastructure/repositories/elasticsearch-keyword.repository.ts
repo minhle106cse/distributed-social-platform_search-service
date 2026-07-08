@@ -4,7 +4,7 @@ import type {
   IKeywordSearchRepository,
   IndexItemDoc,
   KeywordHit,
-} from '../../application/repositories/keyword-search.repository.interface'
+} from '../../domain/repositories/keyword-search.repository'
 
 interface ItemSource {
   orgId: string

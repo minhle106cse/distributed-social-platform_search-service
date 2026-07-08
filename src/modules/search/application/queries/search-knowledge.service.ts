@@ -5,28 +5,16 @@ import { EMBEDDING_SERVICE } from '../../domain/services/embedding.service'
 import type {
   ISearchChunkRepository,
   SearchHit,
-} from '../repositories/search-chunk.repository.interface'
-import { SEARCH_CHUNK_REPOSITORY } from '../repositories/search-chunk.repository.interface'
+} from '../../domain/repositories/search-chunk.repository'
+import { SEARCH_CHUNK_REPOSITORY } from '../../domain/repositories/search-chunk.repository'
 import type {
   IKeywordSearchRepository,
   KeywordHit,
-} from '../repositories/keyword-search.repository.interface'
-import { KEYWORD_SEARCH_REPOSITORY } from '../repositories/keyword-search.repository.interface'
-import type { ISummarizer, SummarySource } from '../../domain/services/summarizer'
+} from '../../domain/repositories/keyword-search.repository'
+import { KEYWORD_SEARCH_REPOSITORY } from '../../domain/repositories/keyword-search.repository'
+import type { ISummarizer } from '../../domain/services/summarizer'
 import { SUMMARIZER } from '../../domain/services/summarizer'
-
-export interface RankedItem {
-  knowledgeItemId: string
-  content: string
-  titleSnapshot: string
-  score: number
-}
-
-export interface SearchResult {
-  chunks: RankedItem[]
-  summary: string | null
-  sources: SummarySource[]
-}
+import type { RankedItem, SearchResult } from './search-knowledge.dto'
 
 const RRF_K = 60 // standard constant (Cormack et al.)
 

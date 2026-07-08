@@ -9,12 +9,12 @@ import { TextChunker } from '../../../domain/services/text-chunker'
 import type { IEmbeddingService } from '../../../domain/services/embedding.service'
 import { EMBEDDING_SERVICE } from '../../../domain/services/embedding.service'
 import type {
-  InsertChunkRow,
   ISearchChunkRepository,
-} from '../../repositories/search-chunk.repository.interface'
-import { SEARCH_CHUNK_REPOSITORY } from '../../repositories/search-chunk.repository.interface'
-import type { IKeywordSearchRepository } from '../../repositories/keyword-search.repository.interface'
-import { KEYWORD_SEARCH_REPOSITORY } from '../../repositories/keyword-search.repository.interface'
+  InsertChunkRow,
+} from '../../../domain/repositories/search-chunk.repository'
+import { SEARCH_CHUNK_REPOSITORY } from '../../../domain/repositories/search-chunk.repository'
+import type { IKeywordSearchRepository } from '../../../domain/repositories/keyword-search.repository'
+import { KEYWORD_SEARCH_REPOSITORY } from '../../../domain/repositories/keyword-search.repository'
 
 @Injectable()
 export class IndexKnowledgeHandler implements IIntegrationEventHandler<KnowledgePublishedPayload> {
@@ -31,7 +31,8 @@ export class IndexKnowledgeHandler implements IIntegrationEventHandler<Knowledge
   ) {}
 
   async handle(event: CloudEvent<KnowledgePublishedPayload>): Promise<void> {
-    const { itemId, orgId, spaceId, title, body } = event.data
+    const { itemId, spaceId, title, body } = event.data
+    const orgId = event.orgid
 
     const chunks = this.chunker.chunk(`${title}\n\n${body}`)
     if (chunks.length === 0) {
