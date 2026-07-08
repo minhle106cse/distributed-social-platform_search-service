@@ -17,8 +17,8 @@ export class HttpEmbeddingService implements IEmbeddingService {
   private readonly model: string
 
   constructor(config: ConfigService) {
-    this.baseUrl = config.get<string>('env.embeddingServiceUrl') ?? 'http://localhost:8085'
-    this.model = config.get<string>('env.embeddingModel') ?? 'nomic-embed-text'
+    this.baseUrl = config.getOrThrow<string>('env.embeddingServiceUrl')
+    this.model = config.getOrThrow<string>('env.embeddingModel')
   }
 
   // A 100k-char body chunks into ~60+ texts; sending them in one request gives

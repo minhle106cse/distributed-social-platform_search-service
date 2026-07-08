@@ -6,6 +6,7 @@
 *.tsbuildinfo
 
 .env.*
+!.env.secrets.example
 
 # Logs
 logs

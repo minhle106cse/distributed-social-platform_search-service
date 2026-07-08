@@ -18,8 +18,8 @@ export class ClaudeSummarizer implements ISummarizer {
   private readonly breaker: CircuitBreaker
 
   constructor(config: ConfigService, @InjectPinoLogger(ClaudeSummarizer.name) logger: PinoLogger) {
-    this.client = new Anthropic({ apiKey: config.get<string>('env.anthropicApiKey') ?? '' })
-    this.model = config.get<string>('env.ragModel') ?? 'claude-opus-4-8'
+    this.client = new Anthropic({ apiKey: config.getOrThrow<string>('env.anthropicApiKey') })
+    this.model = config.getOrThrow<string>('env.ragModel')
     this.breaker = new CircuitBreaker(logger)
   }
 

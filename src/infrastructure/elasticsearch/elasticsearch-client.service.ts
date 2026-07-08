@@ -13,10 +13,10 @@ export class ElasticsearchClientService implements OnModuleDestroy {
 
   constructor(config: ConfigService) {
     this.client = new Client({
-      node: config.get<string>('env.elasticsearchUrl') ?? 'http://localhost:9200',
+      node: config.getOrThrow<string>('env.elasticsearchUrl'),
       auth: {
-        username: config.get<string>('env.elasticUsername') ?? 'elastic',
-        password: config.get<string>('env.elasticPassword') ?? '',
+        username: config.getOrThrow<string>('env.elasticUsername'),
+        password: config.getOrThrow<string>('env.elasticPassword'),
       },
     })
   }

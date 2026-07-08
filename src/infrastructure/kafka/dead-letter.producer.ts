@@ -1,19 +1,13 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import { Producer } from 'kafkajs'
-import { deadLetterTopic, LogContext } from '@distributed-social-platform/shared-kernel'
+import {
+  deadLetterTopic,
+  LogContext,
+  type DeadLetterInput,
+} from '@distributed-social-platform/shared-kernel'
 import { dlqCounter } from '@/infrastructure/observability/search.metrics'
 import { KafkaClientService } from './kafka-client.service'
-
-export interface DeadLetterInput {
-  topic: string
-  key: Buffer | string | null
-  value: Buffer | string | null
-  reason: 'poison-pill' | 'handler-error'
-  error: string
-  partition: number
-  offset: string
-}
 
 /**
  * Routes a terminally-failed message to `<topic>.DLQ` so it is isolated for triage

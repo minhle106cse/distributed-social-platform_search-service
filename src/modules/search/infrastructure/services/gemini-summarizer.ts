@@ -20,8 +20,8 @@ export class GeminiSummarizer implements ISummarizer {
   private readonly breaker: CircuitBreaker
 
   constructor(config: ConfigService, @InjectPinoLogger(GeminiSummarizer.name) logger: PinoLogger) {
-    this.apiKey = config.get<string>('env.geminiApiKey') ?? ''
-    this.model = config.get<string>('env.geminiModel') ?? 'gemini-2.5-flash'
+    this.apiKey = config.getOrThrow<string>('env.geminiApiKey')
+    this.model = config.getOrThrow<string>('env.geminiModel')
     this.breaker = new CircuitBreaker(logger)
   }
 

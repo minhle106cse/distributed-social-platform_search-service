@@ -8,7 +8,11 @@ import { validate } from './env.validation'
     NestConfigModule.forRoot({
       isGlobal: true,
       validate,
-      envFilePath: '../../.env',
+      // Service-only secrets (.env.secrets — ANTHROPIC_API_KEY/GEMINI_API_KEY,
+      // only this service reads them) take precedence, then shared infra
+      // config. Neither file overlaps on keys, so precedence order doesn't
+      // change behavior today — listed local-first as convention.
+      envFilePath: ['.env.secrets', '../../.env'],
       load: [envConfig],
     }),
   ],

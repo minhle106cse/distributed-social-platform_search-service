@@ -16,6 +16,7 @@
     "db:studio": "prisma studio --port 5559",
     "postinstall": "prisma generate",
     "start": "nest start",
+    "dev": "nest start --watch",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",

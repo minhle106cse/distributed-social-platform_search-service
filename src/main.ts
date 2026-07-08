@@ -9,7 +9,7 @@ async function bootstrap() {
   const app = await createApp()
   const config = app.get(ConfigService)
 
-  const port = config.get<number>('env.port') ?? 4003
+  const port = config.getOrThrow<number>('env.port')
   await app.listen({ port, host: '0.0.0.0' })
 }
 
