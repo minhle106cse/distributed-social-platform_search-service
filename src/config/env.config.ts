@@ -31,5 +31,7 @@ export const envConfig = registerAs('env', () => {
     ragModel: env.RAG_MODEL,
     geminiApiKey: env.GEMINI_API_KEY,
     geminiModel: env.GEMINI_MODEL,
+    coreGrpcUrl: env.CORE_GRPC_URL,
+    internalGrpcSharedSecret: env.INTERNAL_GRPC_SHARED_SECRET,
   }
 })

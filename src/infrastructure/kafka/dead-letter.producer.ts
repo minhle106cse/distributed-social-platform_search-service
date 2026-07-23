@@ -22,7 +22,9 @@ export class DeadLetterProducer implements OnModuleInit, OnModuleDestroy {
     kafkaClient: KafkaClientService,
     @InjectPinoLogger(DeadLetterProducer.name) private readonly logger: PinoLogger,
   ) {
-    this.producer = kafkaClient.client.producer({ idempotent: true })
+    // maxInFlightRequests:5 is the Kafka-documented ceiling for idempotence to
+    // preserve ordering under retries — kafkajs does not set it automatically.
+    this.producer = kafkaClient.client.producer({ idempotent: true, maxInFlightRequests: 5 })
   }
 
   async onModuleInit(): Promise<void> {

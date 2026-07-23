@@ -24,7 +24,10 @@ export async function buildServer() {
   app.useLogger(app.get(Logger))
   app.setGlobalPrefix('api/v1', { exclude: ['health', 'metrics'] })
   app.useGlobalPipes(new ZodValidationPipe())
-  app.enableShutdownHooks()
+  // No enableShutdownHooks() here — it calls app.close() with no timeout on
+  // SIGTERM, so a hung request would block shutdown forever. main.ts owns
+  // the shutdown handler instead, wrapped in a forced-exit timeout
+  // (resilience_patterns.md §5).
 
   await setupFastify(app)
   await app.init()

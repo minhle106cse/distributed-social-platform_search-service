@@ -26,6 +26,11 @@ export const envValidationSchema = z.object({
   RAG_MODEL: z.string().default('claude-opus-4-8'), // Claude alias, NOT date-suffixed
   GEMINI_API_KEY: z.string().default(''),
   GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  // gRPC client target for core-api's internal MembershipVerification service
+  // — search-service has no Membership table of its own, so X-Org-Id must be
+  // verified against core-api before being trusted (IDOR fix).
+  CORE_GRPC_URL: z.string().default('localhost:50052'),
+  INTERNAL_GRPC_SHARED_SECRET: z.string().min(16),
 })
 
 export function validate(config: Record<string, unknown>) {
