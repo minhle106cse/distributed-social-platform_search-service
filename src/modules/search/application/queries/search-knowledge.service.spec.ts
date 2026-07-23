@@ -37,7 +37,9 @@ describe('SearchKnowledgeService', () => {
     } as unknown as jest.Mocked<ISummarizer>
 
     mockLogger = {
+      info: jest.fn(),
       warn: jest.fn(),
+      debug: jest.fn(),
     } as unknown as jest.Mocked<PinoLogger>
 
     service = new SearchKnowledgeService(
@@ -90,6 +92,17 @@ describe('SearchKnowledgeService', () => {
     const result = await service.search('org-1', 'query', 10, false)
 
     expect(result.chunks).toHaveLength(1)
+    expect(mockLogger.warn).toHaveBeenCalled()
+  })
+
+  it('should degrade to keyword-only (not throw) when the embedding service fails', async () => {
+    mockEmbedding.embedBatch.mockRejectedValueOnce(new Error('embedding service unreachable'))
+    mockKeywordRepo.search.mockResolvedValueOnce([keywordHit({ knowledgeItemId: 'item-1' })])
+
+    const result = await service.search('org-1', 'query', 10, false)
+
+    expect(result.chunks).toHaveLength(1)
+    expect(mockChunkRepo.semanticSearch).not.toHaveBeenCalled()
     expect(mockLogger.warn).toHaveBeenCalled()
   })
 

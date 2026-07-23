@@ -1,7 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import type { CloudEvent } from '@distributed-social-platform/shared-kernel'
 import {
   EventType,
+  LogContext,
   type IIntegrationEventHandler,
   type KnowledgePublishedPayload,
 } from '@distributed-social-platform/shared-kernel'
@@ -28,16 +30,22 @@ export class IndexKnowledgeHandler implements IIntegrationEventHandler<Knowledge
     @Inject(SEARCH_CHUNK_REPOSITORY) private readonly chunkRepo: ISearchChunkRepository,
     @Inject(KEYWORD_SEARCH_REPOSITORY) private readonly keywordRepo: IKeywordSearchRepository,
     private readonly chunker: TextChunker,
+    @InjectPinoLogger(IndexKnowledgeHandler.name) private readonly logger: PinoLogger,
   ) {}
 
   async handle(event: CloudEvent<KnowledgePublishedPayload>): Promise<void> {
     const { itemId, spaceId, title, body } = event.data
     const orgId = event.orgid
+    const startedAt = Date.now()
 
     const chunks = this.chunker.chunk(`${title}\n\n${body}`)
     if (chunks.length === 0) {
       // Nothing to index (empty item) — clear any stale chunks and stop.
       await this.chunkRepo.replaceForItem(itemId, [])
+      this.logger.info(
+        { context: LogContext.EVENT_ROUTER, orgId, itemId, chunkCount: 0 },
+        'Indexing skipped — empty item, cleared',
+      )
       return
     }
 
@@ -64,5 +72,22 @@ export class IndexKnowledgeHandler implements IIntegrationEventHandler<Knowledge
       title,
       content: body,
     })
+
+    // EventRouter (shared-kernel, 2026-07-25) already logs the generic
+    // "Routed KNOWLEDGE_PUBLISHED, durationMs" dispatch line for every
+    // handler automatically — this extra log is handler-specific business
+    // detail EventRouter can't know (which org/item, how many chunks), same
+    // relationship as a CommandHandler adding its own domain log on top of
+    // CommandBus's generic LoggingMiddleware line.
+    this.logger.info(
+      {
+        context: LogContext.EVENT_ROUTER,
+        orgId,
+        itemId,
+        chunkCount: chunks.length,
+        durationMs: Date.now() - startedAt,
+      },
+      'Indexing completed',
+    )
   }
 }

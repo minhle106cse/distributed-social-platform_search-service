@@ -1,5 +1,6 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common'
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Injectable } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import type { ErrorDetails } from '@distributed-social-platform/shared-kernel'
 import {
   ApplicationError,
@@ -24,8 +25,13 @@ function isErrorDetails(value: unknown): value is ErrorDetails {
   return typeof value === 'object' && value !== null
 }
 
+@Injectable()
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  constructor(
+    @InjectPinoLogger(GlobalExceptionFilter.name) private readonly logger: PinoLogger,
+  ) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp()
     const reply = ctx.getResponse<FastifyReply>()
@@ -62,7 +68,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = exception.message
       details = exception.details
     } else {
-      req.log.error({ context: LogContext.EXCEPTION, err: exception }, 'Unhandled exception')
+      this.logger.error({ context: LogContext.EXCEPTION, err: exception }, 'Unhandled exception')
     }
 
     reply.status(status).send(buildErrorBody({ code, message, details, requestId: req.id }))

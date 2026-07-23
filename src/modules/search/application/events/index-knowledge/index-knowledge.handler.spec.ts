@@ -1,3 +1,4 @@
+import type { PinoLogger } from 'nestjs-pino'
 import type { CloudEvent, KnowledgePublishedPayload } from '@distributed-social-platform/shared-kernel'
 import type { IEmbeddingService } from '../../../domain/services/embedding.service'
 import type { ISearchChunkRepository } from '../../../domain/repositories/search-chunk.repository'
@@ -35,6 +36,7 @@ describe('IndexKnowledgeHandler', () => {
   let mockEmbedding: jest.Mocked<IEmbeddingService>
   let mockChunkRepo: jest.Mocked<ISearchChunkRepository>
   let mockKeywordRepo: jest.Mocked<IKeywordSearchRepository>
+  let mockLogger: jest.Mocked<PinoLogger>
 
   beforeEach(() => {
     mockEmbedding = {
@@ -52,11 +54,17 @@ describe('IndexKnowledgeHandler', () => {
       search: jest.fn(),
     } as unknown as jest.Mocked<IKeywordSearchRepository>
 
+    mockLogger = {
+      info: jest.fn(),
+      warn: jest.fn(),
+    } as unknown as jest.Mocked<PinoLogger>
+
     handler = new IndexKnowledgeHandler(
       mockEmbedding,
       mockChunkRepo,
       mockKeywordRepo,
       new TextChunker(),
+      mockLogger,
     )
   })
 
