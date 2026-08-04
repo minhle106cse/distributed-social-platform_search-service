@@ -7,7 +7,7 @@ jest.mock('@anthropic-ai/sdk', () => {
 
 import { ClaudeSummarizer } from './claude-summarizer'
 import type { ClaudeApiCaller } from './claude-api.caller'
-import type { SummaryContext } from '../../domain/services/summarizer'
+import type { SummaryContext } from '../../domain/services/summarizer.service'
 
 describe('ClaudeSummarizer', () => {
   let summarizer: ClaudeSummarizer

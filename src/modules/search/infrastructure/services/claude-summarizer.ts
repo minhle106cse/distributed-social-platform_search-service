@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Anthropic from '@anthropic-ai/sdk'
 import { ClaudeApiCaller } from './claude-api.caller'
-import type { ISummarizer, RagSummary, SummaryContext } from '../../domain/services/summarizer'
+import type {
+  ISummarizerService,
+  RagSummary,
+  SummaryContext,
+} from '../../domain/services/summarizer.service'
 import { RAG_SYSTEM_PROMPT, buildRagPrompt } from '../../domain/services/rag-prompt.builder'
 
 /**
@@ -12,11 +16,14 @@ import { RAG_SYSTEM_PROMPT, buildRagPrompt } from '../../domain/services/rag-pro
  * trips, summarize() throws and the query handler returns chunks with no summary.
  */
 @Injectable()
-export class ClaudeSummarizer implements ISummarizer {
+export class ClaudeSummarizer implements ISummarizerService {
   private readonly client: Anthropic
   private readonly model: string
 
-  constructor(config: ConfigService, private readonly caller: ClaudeApiCaller) {
+  constructor(
+    config: ConfigService,
+    private readonly caller: ClaudeApiCaller,
+  ) {
     this.client = new Anthropic({ apiKey: config.getOrThrow<string>('env.anthropicApiKey') })
     this.model = config.getOrThrow<string>('env.ragModel')
   }

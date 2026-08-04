@@ -1,4 +1,4 @@
-import type { SummarySource } from '../../domain/services/summarizer'
+import type { SummarySource } from '../../domain/services/summarizer.service'
 
 export interface RankedItem {
   knowledgeItemId: string

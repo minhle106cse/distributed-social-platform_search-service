@@ -4,17 +4,17 @@ import { LogContext } from '@distributed-social-platform/shared-kernel'
 import type { IEmbeddingService } from '../../domain/services/embedding.service'
 import { EMBEDDING_SERVICE } from '../../domain/services/embedding.service'
 import type {
-  ISearchChunkRepository,
+  ISearchChunkReader,
   SearchHit,
 } from '../../domain/repositories/search-chunk.repository'
-import { SEARCH_CHUNK_REPOSITORY } from '../../domain/repositories/search-chunk.repository'
+import { SEARCH_CHUNK_READER } from '../../domain/repositories/search-chunk.repository'
 import type {
   IKeywordSearchRepository,
   KeywordHit,
 } from '../../domain/repositories/keyword-search.repository'
 import { KEYWORD_SEARCH_REPOSITORY } from '../../domain/repositories/keyword-search.repository'
-import type { ISummarizer } from '../../domain/services/summarizer'
-import { SUMMARIZER } from '../../domain/services/summarizer'
+import type { ISummarizerService } from '../../domain/services/summarizer.service'
+import { SUMMARIZER_SERVICE } from '../../domain/services/summarizer.service'
 import type { RankedItem, SearchResult } from './search-knowledge.dto'
 
 const RRF_K = 60 // standard constant (Cormack et al.)
@@ -29,9 +29,9 @@ const RRF_K = 60 // standard constant (Cormack et al.)
 export class SearchKnowledgeService {
   constructor(
     @Inject(EMBEDDING_SERVICE) private readonly embedding: IEmbeddingService,
-    @Inject(SEARCH_CHUNK_REPOSITORY) private readonly chunkRepo: ISearchChunkRepository,
+    @Inject(SEARCH_CHUNK_READER) private readonly chunkReader: ISearchChunkReader,
     @Inject(KEYWORD_SEARCH_REPOSITORY) private readonly keywordRepo: IKeywordSearchRepository,
-    @Inject(SUMMARIZER) private readonly summarizer: ISummarizer,
+    @Inject(SUMMARIZER_SERVICE) private readonly summarizer: ISummarizerService,
     @InjectPinoLogger(SearchKnowledgeService.name) private readonly logger: PinoLogger,
   ) {}
 
@@ -118,10 +118,14 @@ export class SearchKnowledgeService {
   // out/circuit-open, degrade to keyword-only instead of failing the whole search.
   // Was previously un-caught (asymmetric with the keyword side, which already
   // degraded) — a slow/dead embedder used to 500 the entire query.
-  private async semanticSearch(orgId: string, query: string, fetchCount: number): Promise<SearchHit[]> {
+  private async semanticSearch(
+    orgId: string,
+    query: string,
+    fetchCount: number,
+  ): Promise<SearchHit[]> {
     try {
       const [queryVec] = await this.embedding.embedBatch([query])
-      return await this.chunkRepo.semanticSearch(orgId, queryVec, fetchCount)
+      return await this.chunkReader.semanticSearch(orgId, queryVec, fetchCount)
     } catch (err) {
       this.logger.warn(
         { context: LogContext.QUERY_BUS, err },

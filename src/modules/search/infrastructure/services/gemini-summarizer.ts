@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { GeminiApiCaller } from './gemini-api.caller'
-import type { ISummarizer, RagSummary, SummaryContext } from '../../domain/services/summarizer'
+import type {
+  ISummarizerService,
+  RagSummary,
+  SummaryContext,
+} from '../../domain/services/summarizer.service'
 import { RAG_SYSTEM_PROMPT, buildRagPrompt } from '../../domain/services/rag-prompt.builder'
 
 interface GeminiResponse {
@@ -10,15 +14,18 @@ interface GeminiResponse {
 
 /**
  * RAG summarization via Google Gemini (REST, no SDK). Alternative adapter behind
- * the SAME ISummarizer port — swapping the LLM provider is one adapter + one line
+ * the SAME ISummarizerService port — swapping the LLM provider is one adapter + one line
  * in the module, with zero change to search/handler logic. Same `GeminiApiCaller`.
  */
 @Injectable()
-export class GeminiSummarizer implements ISummarizer {
+export class GeminiSummarizer implements ISummarizerService {
   private readonly apiKey: string
   private readonly model: string
 
-  constructor(config: ConfigService, private readonly caller: GeminiApiCaller) {
+  constructor(
+    config: ConfigService,
+    private readonly caller: GeminiApiCaller,
+  ) {
     this.apiKey = config.getOrThrow<string>('env.geminiApiKey')
     this.model = config.getOrThrow<string>('env.geminiModel')
   }

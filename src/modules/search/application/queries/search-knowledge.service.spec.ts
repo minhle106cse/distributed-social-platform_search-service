@@ -1,19 +1,22 @@
 import type { PinoLogger } from 'nestjs-pino'
 import type { IEmbeddingService } from '../../domain/services/embedding.service'
-import type { ISearchChunkRepository, SearchHit } from '../../domain/repositories/search-chunk.repository'
+import type {
+  ISearchChunkReader,
+  SearchHit,
+} from '../../domain/repositories/search-chunk.repository'
 import type {
   IKeywordSearchRepository,
   KeywordHit,
 } from '../../domain/repositories/keyword-search.repository'
-import type { ISummarizer } from '../../domain/services/summarizer'
+import type { ISummarizerService } from '../../domain/services/summarizer.service'
 import { SearchKnowledgeService } from './search-knowledge.service'
 
 describe('SearchKnowledgeService', () => {
   let service: SearchKnowledgeService
   let mockEmbedding: jest.Mocked<IEmbeddingService>
-  let mockChunkRepo: jest.Mocked<ISearchChunkRepository>
+  let mockChunkRepo: jest.Mocked<ISearchChunkReader>
   let mockKeywordRepo: jest.Mocked<IKeywordSearchRepository>
-  let mockSummarizer: jest.Mocked<ISummarizer>
+  let mockSummarizer: jest.Mocked<ISummarizerService>
   let mockLogger: jest.Mocked<PinoLogger>
 
   beforeEach(() => {
@@ -25,7 +28,7 @@ describe('SearchKnowledgeService', () => {
     mockChunkRepo = {
       replaceForItem: jest.fn(),
       semanticSearch: jest.fn().mockResolvedValue([]),
-    } as unknown as jest.Mocked<ISearchChunkRepository>
+    } as unknown as jest.Mocked<ISearchChunkReader>
 
     mockKeywordRepo = {
       indexItem: jest.fn(),
@@ -34,7 +37,7 @@ describe('SearchKnowledgeService', () => {
 
     mockSummarizer = {
       summarize: jest.fn(),
-    } as unknown as jest.Mocked<ISummarizer>
+    } as unknown as jest.Mocked<ISummarizerService>
 
     mockLogger = {
       info: jest.fn(),

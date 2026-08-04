@@ -1,6 +1,6 @@
 import { GeminiSummarizer } from './gemini-summarizer'
 import type { GeminiApiCaller } from './gemini-api.caller'
-import type { SummaryContext } from '../../domain/services/summarizer'
+import type { SummaryContext } from '../../domain/services/summarizer.service'
 
 describe('GeminiSummarizer', () => {
   let summarizer: GeminiSummarizer

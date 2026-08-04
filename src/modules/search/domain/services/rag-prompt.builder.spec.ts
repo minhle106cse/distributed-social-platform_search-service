@@ -1,5 +1,5 @@
 import { buildRagPrompt, RAG_SYSTEM_PROMPT } from './rag-prompt.builder'
-import type { SummaryContext } from './summarizer'
+import type { SummaryContext } from './summarizer.service'
 
 describe('buildRagPrompt', () => {
   it('nên bọc mỗi source trong <source> tag kèm index/title', () => {

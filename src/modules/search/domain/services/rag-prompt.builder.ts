@@ -1,4 +1,4 @@
-import type { SummaryContext } from './summarizer'
+import type { SummaryContext } from './summarizer.service'
 
 // Prompt-injection mitigation (OWASP LLM01). Retrieved document content is
 // untrusted — it's whatever any org member uploaded to Knowledge, and it

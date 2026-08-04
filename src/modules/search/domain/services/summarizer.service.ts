@@ -14,9 +14,9 @@ export interface RagSummary {
   sources: SummarySource[]
 }
 
-export const SUMMARIZER = Symbol('SUMMARIZER')
+export const SUMMARIZER_SERVICE = Symbol('SUMMARIZER_SERVICE')
 
-export interface ISummarizer {
+export interface ISummarizerService {
   /** Grounded answer synthesised from the retrieved chunks. Throws if the AI
    *  provider is unavailable (circuit open) — the caller degrades to no summary. */
   summarize(query: string, context: SummaryContext[]): Promise<RagSummary>
