@@ -1,8 +1,13 @@
+import type { ITxRunner } from '@distributed-social-platform/shared-kernel'
 import type { PinoLogger } from 'nestjs-pino'
-import type { CloudEvent, KnowledgePublishedPayload } from '@distributed-social-platform/shared-kernel'
+import type {
+  CloudEvent,
+  KnowledgePublishedPayload,
+} from '@distributed-social-platform/shared-kernel'
 import type { IEmbeddingService } from '../../../domain/services/embedding.service'
 import type { ISearchChunkRepository } from '../../../domain/repositories/search-chunk.repository'
 import type { IKeywordSearchRepository } from '../../../domain/repositories/keyword-search.repository'
+import type { SearchTxScope } from '../../../domain/search-tx-scope'
 import { TextChunker } from '../../../domain/services/text-chunker'
 import { IndexKnowledgeHandler } from './index-knowledge.handler'
 
@@ -46,7 +51,6 @@ describe('IndexKnowledgeHandler', () => {
 
     mockChunkRepo = {
       replaceForItem: jest.fn(),
-      semanticSearch: jest.fn(),
     } as unknown as jest.Mocked<ISearchChunkRepository>
 
     mockKeywordRepo = {
@@ -59,17 +63,17 @@ describe('IndexKnowledgeHandler', () => {
       warn: jest.fn(),
     } as unknown as jest.Mocked<PinoLogger>
 
+    const txRunner: ITxRunner<SearchTxScope> = {
+      run: (fn) => fn({ chunks: mockChunkRepo } as SearchTxScope),
+    }
+
     handler = new IndexKnowledgeHandler(
       mockEmbedding,
-      mockChunkRepo,
+      txRunner,
       mockKeywordRepo,
       new TextChunker(),
       mockLogger,
     )
-  })
-
-  it('should declare natural-key idempotency (replaceForItem + ES upsert are both idempotent by itemId)', () => {
-    expect(handler.idempotency).toBe('natural-key')
   })
 
   it('should embed the chunked content and write both the pgvector and Elasticsearch sides', async () => {

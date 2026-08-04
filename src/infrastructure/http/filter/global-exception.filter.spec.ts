@@ -49,9 +49,13 @@ describe('GlobalExceptionFilter — a truly unhandled exception is logged with i
     })
     class TestAppModule {}
 
-    const app = await NestFactory.create<NestFastifyApplication>(TestAppModule, new FastifyAdapter(), {
-      logger: false,
-    })
+    const app = await NestFactory.create<NestFastifyApplication>(
+      TestAppModule,
+      new FastifyAdapter(),
+      {
+        logger: false,
+      },
+    )
     await app.init()
     await app.getHttpAdapter().getInstance().ready()
 
@@ -93,9 +97,13 @@ describe('GlobalExceptionFilter — a truly unhandled exception is logged with i
     })
     class TestAppModule {}
 
-    const app = await NestFactory.create<NestFastifyApplication>(TestAppModule, new FastifyAdapter(), {
-      logger: false,
-    })
+    const app = await NestFactory.create<NestFastifyApplication>(
+      TestAppModule,
+      new FastifyAdapter(),
+      {
+        logger: false,
+      },
+    )
     await app.init()
     await app.getHttpAdapter().getInstance().ready()
 

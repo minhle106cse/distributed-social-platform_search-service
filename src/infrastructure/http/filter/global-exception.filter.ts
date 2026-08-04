@@ -28,9 +28,7 @@ function isErrorDetails(value: unknown): value is ErrorDetails {
 @Injectable()
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  constructor(
-    @InjectPinoLogger(GlobalExceptionFilter.name) private readonly logger: PinoLogger,
-  ) {}
+  constructor(@InjectPinoLogger(GlobalExceptionFilter.name) private readonly logger: PinoLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp()

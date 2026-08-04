@@ -15,20 +15,27 @@ export interface SearchHit {
   score: number // cosine similarity (1 - distance), higher = closer
 }
 
-export const SEARCH_CHUNK_REPOSITORY = Symbol('SEARCH_CHUNK_REPOSITORY')
+export const SEARCH_CHUNK_READER = Symbol('SEARCH_CHUNK_READER')
 
 /**
- * The pgvector chunk index — a write-model with an internal read, not an HTTP
- * query-side repo. `replaceForItem` is the write (fed by the IndexKnowledge
- * event handler); `semanticSearch` is an internal lookup whose `SearchHit[]`
- * is an intermediate input to RRF fusion in SearchKnowledgeService, NOT the
- * endpoint's response DTO (that is SearchResult). Both directions live in the
- * event/service pipeline, so this belongs in domain/repositories/ alongside
- * other write-model repos — mirrors notification's space-follower projection.
+ * The pgvector chunk index. Split by direction in ADR-0001, because the two
+ * directions have opposite transaction needs:
+ *
+ * - WRITE (`ISearchChunkRepository`) is a delete+insert that must be atomic, so it
+ *   only exists inside `SearchTxScope`.
+ * - READ (`ISearchChunkReader`) is the search hot path, called per query with no
+ *   transaction at all — opening one for it would take a connection for nothing.
+ *
+ * `SearchHit[]` is still an intermediate input to RRF fusion in
+ * SearchKnowledgeService, not the endpoint's response DTO (that is SearchResult),
+ * which is why the read port lives here in domain/ rather than in application/queries/.
  */
 export interface ISearchChunkRepository {
   /** Re-index an item: delete its old chunks and insert the new set atomically. */
   replaceForItem(itemId: string, rows: InsertChunkRow[]): Promise<void>
+}
+
+export interface ISearchChunkReader {
   /** Top-K nearest chunks by cosine distance, scoped to org. */
   semanticSearch(orgId: string, queryVec: number[], topK: number): Promise<SearchHit[]>
 }
