@@ -14,9 +14,13 @@ export const envValidationSchema = z.object({
   // DLQ replay (review of ADR-0001, 2026-07-30) — a separate consumer group that
   // retries messages isolated to `<topic>.DLQ` after in-process retry was
   // exhausted. Own group so it never competes with the main consumer's offsets.
+  // Delay is full-jitter exponential (base·2^replayCount, capped, then
+  // randomized — 2026-08-04) so a batch of messages that died together during
+  // one downstream outage doesn't replay in lockstep and re-overwhelm it.
   KAFKA_DLQ_REPLAY_CONSUMER_GROUP: z.string().default('search-service-dlq-replay-group'),
   KAFKA_DLQ_MAX_REPLAYS: z.coerce.number().int().min(0).default(3),
-  KAFKA_DLQ_REPLAY_DELAY_MS: z.coerce.number().int().min(0).default(60_000),
+  KAFKA_DLQ_REPLAY_BASE_DELAY_MS: z.coerce.number().int().min(0).default(60_000),
+  KAFKA_DLQ_REPLAY_MAX_DELAY_MS: z.coerce.number().int().min(0).default(300_000),
   // Embeddings (self-hosted local — NOT Claude). Ollama nomic-embed-text, dim 768.
   EMBEDDING_SERVICE_URL: z.string().url(),
   EMBEDDING_MODEL: z.string().default('nomic-embed-text'),

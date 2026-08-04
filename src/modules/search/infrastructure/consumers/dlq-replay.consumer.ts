@@ -43,7 +43,8 @@ export class DlqReplayConsumerService implements OnModuleInit, OnModuleDestroy {
       dlqTopics: [deadLetterTopic(KafkaTopic.KNOWLEDGE_EVENTS)],
       logger,
       maxReplays: config.getOrThrow<number>('env.kafkaDlqMaxReplays'),
-      replayDelayMs: config.getOrThrow<number>('env.kafkaDlqReplayDelayMs'),
+      baseReplayDelayMs: config.getOrThrow<number>('env.kafkaDlqReplayBaseDelayMs'),
+      maxReplayDelayMs: config.getOrThrow<number>('env.kafkaDlqReplayMaxDelayMs'),
       onReplay: (originalTopic) => dlqReplayedCounter.inc({ originalTopic }),
       onGiveUp: (originalTopic) => dlqGiveUpCounter.inc({ originalTopic }),
     })
