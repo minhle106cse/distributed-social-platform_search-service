@@ -91,4 +91,16 @@ describe('HttpEmbeddingService', () => {
 
     expect(mockCaller.call).toHaveBeenCalledTimes(1)
   })
+
+  it('status không phải 2xx phải reject NGAY BÊN TRONG hàm truyền cho caller.call() — breaker phải thấy đây là failure thật, không phải success (2026-08-04 fix)', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 503, text: async () => 'down' })
+
+    await expect(service.embed('x')).rejects.toThrow()
+
+    // fetch() tự nó KHÔNG reject khi status non-2xx — nếu code lỡ để check
+    // `!res.ok` chạy SAU khi caller.call() đã resolve, wrappedFn() ở đây sẽ
+    // resolve chứ không reject, và breaker sẽ tính nhầm là success.
+    const wrappedFn = mockCaller.call.mock.calls[0][0]
+    await expect(wrappedFn()).rejects.toThrow('Embedding service returned 503')
+  })
 })

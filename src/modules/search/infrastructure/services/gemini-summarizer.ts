@@ -32,8 +32,14 @@ export class GeminiSummarizer implements ISummarizerService {
 
   async summarize(query: string, context: SummaryContext[]): Promise<RagSummary> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`
-    const res = await this.caller.call(() =>
-      fetch(url, {
+    // `!res.ok` check MUST stay inside the wrapped closure, not after
+    // caller.call() returns — fetch() only rejects on network failure, never
+    // on HTTP status, so a 4xx/5xx here would otherwise resolve as a breaker
+    // "success" and the breaker would never trip on a real Gemini outage
+    // (2026-08-04 audit, same class of bug as the ALREADY_EXISTS one fixed
+    // earlier — this time a fault silently NOT counted, not the reverse).
+    const res = await this.caller.call(async () => {
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': this.apiKey },
         body: JSON.stringify({
@@ -43,12 +49,12 @@ export class GeminiSummarizer implements ISummarizerService {
           contents: [{ parts: [{ text: buildRagPrompt(query, context) }] }],
           generationConfig: { maxOutputTokens: 1024 },
         }),
-      }),
-    )
-
-    if (!res.ok) {
-      throw new Error(`Gemini API ${res.status}: ${await res.text()}`)
-    }
+      })
+      if (!response.ok) {
+        throw new Error(`Gemini API ${response.status}: ${await response.text()}`)
+      }
+      return response
+    })
 
     const data = (await res.json()) as GeminiResponse
     const text = (data.candidates?.[0]?.content?.parts ?? [])

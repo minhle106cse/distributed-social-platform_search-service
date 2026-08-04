@@ -57,18 +57,23 @@ export class HttpEmbeddingService implements IEmbeddingService {
   }
 
   private async embedSlice(texts: string[]): Promise<number[][]> {
-    const res = await this.caller.call(() =>
-      fetch(`${this.baseUrl}/api/embed`, {
+    // `!res.ok` check MUST stay inside the wrapped closure, not after
+    // caller.call() returns — fetch() only rejects on network failure, never
+    // on HTTP status, so a 4xx/5xx here would otherwise resolve as a breaker
+    // "success" and the breaker would never trip on a real Ollama outage
+    // (2026-08-04 audit, same fix as GeminiSummarizer's).
+    const res = await this.caller.call(async () => {
+      const response = await fetch(`${this.baseUrl}/api/embed`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ model: this.model, input: texts }),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      }),
-    )
-
-    if (!res.ok) {
-      throw new Error(`Embedding service returned ${res.status}: ${await res.text()}`)
-    }
+      })
+      if (!response.ok) {
+        throw new Error(`Embedding service returned ${response.status}: ${await response.text()}`)
+      }
+      return response
+    })
 
     const data = (await res.json()) as OllamaEmbedResponse
     if (!data.embeddings || data.embeddings.length !== texts.length) {
