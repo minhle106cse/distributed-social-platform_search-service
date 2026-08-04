@@ -12,6 +12,12 @@ interface GeminiResponse {
   candidates?: { content?: { parts?: { text?: string }[] } }[]
 }
 
+// Fixed algorithm constant, same convention/value as HttpEmbeddingService's
+// REQUEST_TIMEOUT_MS — this call had NO timeout at all before 2026-08-04
+// (unlike Ollama's fetch(), which already used AbortSignal.timeout) — a
+// hanging Gemini response could block a search request indefinitely.
+const REQUEST_TIMEOUT_MS = 5000
+
 /**
  * RAG summarization via Google Gemini (REST, no SDK). Alternative adapter behind
  * the SAME ISummarizerService port — swapping the LLM provider is one adapter + one line
@@ -49,6 +55,7 @@ export class GeminiSummarizer implements ISummarizerService {
           contents: [{ parts: [{ text: buildRagPrompt(query, context) }] }],
           generationConfig: { maxOutputTokens: 1024 },
         }),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       })
       if (!response.ok) {
         throw new Error(`Gemini API ${response.status}: ${await response.text()}`)

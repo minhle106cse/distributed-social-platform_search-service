@@ -68,6 +68,18 @@ describe('GeminiSummarizer', () => {
     expect(options.headers['x-goog-api-key']).toBe('test-key')
   })
 
+  it('nên gửi request kèm AbortSignal timeout — trước 2026-08-04 fix call này KHÔNG có timeout nào cả', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: 'x' }] } }] }),
+    })
+
+    await summarizer.summarize('q', [])
+
+    const [, options] = fetchMock.mock.calls[0]
+    expect(options.signal).toBeInstanceOf(AbortSignal)
+  })
+
   it('status không phải 2xx phải reject NGAY BÊN TRONG hàm truyền cho caller.call() — breaker phải thấy đây là failure thật, không phải success (2026-08-04 fix)', async () => {
     fetchMock.mockResolvedValue({ ok: false, status: 500, text: async () => 'down' })
 

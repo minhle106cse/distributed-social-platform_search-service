@@ -1,9 +1,8 @@
 const mockCreate = jest.fn()
-jest.mock('@anthropic-ai/sdk', () => {
-  return jest.fn().mockImplementation(() => ({
-    messages: { create: mockCreate },
-  }))
-})
+const mockAnthropicCtor = jest.fn().mockImplementation(() => ({
+  messages: { create: mockCreate },
+}))
+jest.mock('@anthropic-ai/sdk', () => mockAnthropicCtor)
 
 import { ClaudeSummarizer } from './claude-summarizer'
 import type { ClaudeApiCaller } from './claude-api.caller'
@@ -16,6 +15,7 @@ describe('ClaudeSummarizer', () => {
 
   beforeEach(() => {
     mockCreate.mockReset()
+    mockAnthropicCtor.mockClear()
     mockCaller = { call: jest.fn((fn: () => Promise<unknown>) => fn()) }
     mockConfig = {
       getOrThrow: jest.fn((key: string) =>
@@ -70,5 +70,14 @@ describe('ClaudeSummarizer', () => {
     mockCaller.call.mockRejectedValueOnce(new Error('Circuit open'))
 
     await expect(summarizer.summarize('q', [])).rejects.toThrow('Circuit open')
+  })
+
+  it('nên override timeout ngắn + tắt maxRetries của SDK — không dùng default 10 phút/2 retries (2026-08-04 fix)', () => {
+    // maxRetries: 0 vì ClaudeApiCaller/CircuitBreaker đã là lớp retry/circuit-break
+    // của hệ thống — để SDK tự retry ngầm sẽ giấu bớt lỗi thật khỏi breaker và
+    // cộng dồn thời gian chờ trên 1 lần caller.call() duy nhất.
+    expect(mockAnthropicCtor).toHaveBeenCalledWith(
+      expect.objectContaining({ timeout: 5000, maxRetries: 0 }),
+    )
   })
 })
