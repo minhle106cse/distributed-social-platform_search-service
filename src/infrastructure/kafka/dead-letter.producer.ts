@@ -5,6 +5,7 @@ import {
   deadLetterTopic,
   LogContext,
   type DeadLetterInput,
+  type IDeadLetterProducer,
 } from '@distributed-social-platform/shared-kernel'
 import { dlqCounter } from '@/infrastructure/observability/search.metrics'
 import { KafkaClientService } from './kafka-client.service'
@@ -15,7 +16,7 @@ import { KafkaClientService } from './kafka-client.service'
  * original bytes + key are preserved; failure context travels in headers.
  */
 @Injectable()
-export class DeadLetterProducer implements OnModuleInit, OnModuleDestroy {
+export class DeadLetterProducer implements IDeadLetterProducer, OnModuleInit, OnModuleDestroy {
   private readonly producer: Producer
 
   constructor(

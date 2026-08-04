@@ -11,6 +11,12 @@ export const envValidationSchema = z.object({
   KAFKA_SEARCH_INDEXER_GROUP: z.string().default('search-service-indexer-group'),
   KAFKA_CONSUMER_MAX_RETRIES: z.coerce.number().int().min(0).default(3),
   KAFKA_CONSUMER_RETRY_BACKOFF_MS: z.coerce.number().int().min(0).default(500),
+  // DLQ replay (review of ADR-0001, 2026-07-30) — a separate consumer group that
+  // retries messages isolated to `<topic>.DLQ` after in-process retry was
+  // exhausted. Own group so it never competes with the main consumer's offsets.
+  KAFKA_DLQ_REPLAY_CONSUMER_GROUP: z.string().default('search-service-dlq-replay-group'),
+  KAFKA_DLQ_MAX_REPLAYS: z.coerce.number().int().min(0).default(3),
+  KAFKA_DLQ_REPLAY_DELAY_MS: z.coerce.number().int().min(0).default(60_000),
   // Embeddings (self-hosted local — NOT Claude). Ollama nomic-embed-text, dim 768.
   EMBEDDING_SERVICE_URL: z.string().url(),
   EMBEDDING_MODEL: z.string().default('nomic-embed-text'),
@@ -19,7 +25,7 @@ export const envValidationSchema = z.object({
   ELASTICSEARCH_URL: z.string().url().default('http://localhost:9200'),
   ELASTIC_USERNAME: z.string().default('elastic'),
   ELASTIC_PASSWORD: z.string().min(1),
-  // RAG summarization. Provider swappable behind ISummarizer (same circuit
+  // RAG summarization. Provider swappable behind ISummarizerService (same circuit
   // breaker). Keys may be empty — the breaker degrades to no-summary on failure.
   SUMMARIZER_PROVIDER: z.enum(['claude', 'gemini']).default('claude'),
   ANTHROPIC_API_KEY: z.string().default(''),

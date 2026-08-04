@@ -25,3 +25,20 @@ export const chunksIndexedCounter = new Counter({
   name: 'search_chunks_indexed_total',
   help: 'Knowledge chunks embedded and written to the vector store',
 })
+
+// DlqReplayConsumer (review of ADR-0001, 2026-07-30) — a message successfully
+// replayed back to its original topic after sitting in the DLQ.
+export const dlqReplayedCounter = new Counter({
+  name: 'search_dlq_replayed_total',
+  help: 'DLQ messages replayed back to their original topic',
+  labelNames: ['originalTopic'] as const,
+})
+
+// Replay budget exhausted — the message stays in the DLQ topic (Kafka
+// retention) but this consumer stops touching it. Any non-zero rate needs a
+// human to look at the DLQ topic directly.
+export const dlqGiveUpCounter = new Counter({
+  name: 'search_dlq_give_up_total',
+  help: 'DLQ messages that exhausted their replay budget — needs manual triage',
+  labelNames: ['originalTopic'] as const,
+})
