@@ -153,4 +153,25 @@ export default tseslint.config(
     },
   },
 
+  // Relax strict type rules inside test files (Jest mocks are inherently loosely typed).
+  // Mirrors the block auth-service has had all along — its absence here is why
+  // `unbound-method` alone accounted for 81 of the 261 pre-existing lint errors
+  // (2026-08-21 audit): `expect(mock.method).toHaveBeenCalled()` trips it by design,
+  // and that is the standard Jest assertion, not a defect worth 81 rewrites.
+  {
+    files: ['**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/require-await': 'off',
+      'no-empty': 'off',
+    },
+  },
+
 )

@@ -6,7 +6,7 @@ describe('OrgAwareThrottlerGuard', () => {
   beforeEach(() => {
     // ThrottlerGuard's ctor requires DI-injected options/storage/reflector — bypass
     // it with Object.create since getTracker() doesn't touch any of that.
-    guard = Object.create(OrgAwareThrottlerGuard.prototype) as unknown as typeof guard
+    guard = Object.create(OrgAwareThrottlerGuard.prototype)
   })
 
   it('buckets by org+ip when X-Org-Id is present', async () => {

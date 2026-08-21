@@ -14,6 +14,10 @@ import type { FastifyRequest } from 'fastify'
 // cụ thể bằng X-Org-Id giả (orgId không bí mật). Không chặn tuyệt đối, chỉ nâng chi phí.
 @Injectable()
 export class OrgAwareThrottlerGuard extends ThrottlerGuard {
+  // Overrides ThrottlerGuard.getTracker, whose signature is Promise<string>. The body is
+  // genuinely synchronous (a header read), so there is nothing to await — and dropping
+  // `async` would break the override contract.
+  // eslint-disable-next-line @typescript-eslint/require-await
   protected async getTracker(req: FastifyRequest): Promise<string> {
     const orgId = req.headers['x-org-id']
     if (typeof orgId === 'string' && orgId.length > 0) return `org:${orgId}:ip:${req.ip}`

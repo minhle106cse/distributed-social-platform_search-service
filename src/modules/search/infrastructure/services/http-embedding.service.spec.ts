@@ -15,7 +15,7 @@ describe('HttpEmbeddingService', () => {
       ),
     }
     fetchMock = jest.fn()
-    global.fetch = fetchMock as unknown as typeof fetch
+    global.fetch = fetchMock
 
     service = new HttpEmbeddingService(
       mockConfig as any,

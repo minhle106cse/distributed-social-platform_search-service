@@ -20,7 +20,7 @@ describe('SearchKnowledgeService', () => {
     mockEmbedding = {
       embed: jest.fn(),
       embedBatch: jest.fn().mockResolvedValue([[0.1, 0.2, 0.3]]),
-    } as unknown as jest.Mocked<IEmbeddingService>
+    }
 
     mockChunkRepo = {
       replaceForItem: jest.fn(),
@@ -30,11 +30,11 @@ describe('SearchKnowledgeService', () => {
     mockKeywordRepo = {
       indexItem: jest.fn(),
       search: jest.fn().mockResolvedValue([]),
-    } as unknown as jest.Mocked<IKeywordSearchRepository>
+    }
 
     mockSummarizer = {
       summarize: jest.fn(),
-    } as unknown as jest.Mocked<ISummarizerService>
+    }
 
     mockLogger = {
       info: jest.fn(),

@@ -47,16 +47,16 @@ describe('IndexKnowledgeHandler', () => {
     mockEmbedding = {
       embed: jest.fn(),
       embedBatch: jest.fn(),
-    } as unknown as jest.Mocked<IEmbeddingService>
+    }
 
     mockChunkRepo = {
       replaceForItem: jest.fn(),
-    } as unknown as jest.Mocked<ISearchChunkRepository>
+    }
 
     mockKeywordRepo = {
       indexItem: jest.fn(),
       search: jest.fn(),
-    } as unknown as jest.Mocked<IKeywordSearchRepository>
+    }
 
     mockLogger = {
       info: jest.fn(),
@@ -64,7 +64,7 @@ describe('IndexKnowledgeHandler', () => {
     } as unknown as jest.Mocked<PinoLogger>
 
     const txRunner: ITxRunner<SearchTxScope> = {
-      run: (fn) => fn({ chunks: mockChunkRepo } as SearchTxScope),
+      run: (fn) => fn({ chunks: mockChunkRepo }),
     }
 
     handler = new IndexKnowledgeHandler(

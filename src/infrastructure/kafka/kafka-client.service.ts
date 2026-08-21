@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Kafka, type ConsumerConfig } from 'kafkajs'
-import type {
-  MinimalConsumer,
-  MinimalProducer,
-} from '@distributed-social-platform/shared-kernel'
+import type { MinimalConsumer, MinimalProducer } from '@distributed-social-platform/shared-kernel'
 
 @Injectable()
 export class KafkaClientService {
