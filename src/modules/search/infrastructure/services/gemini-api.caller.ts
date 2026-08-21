@@ -5,7 +5,7 @@ import { CircuitBreaker } from '@distributed-social-platform/shared-kernel'
 /**
  * SRP wrapper — the ONLY job of this class is running a call through the
  * 'gemini-summarizer' CircuitBreaker (resilience_patterns.md §3.1.2). URL/
- * body-building and response parsing stay in GeminiSummarizer, which injects
+ * body-building and response parsing stay in GeminiSummarizerService, which injects
  * this.
  */
 @Injectable()

@@ -61,7 +61,7 @@ export class HttpEmbeddingService implements IEmbeddingService {
     // caller.call() returns — fetch() only rejects on network failure, never
     // on HTTP status, so a 4xx/5xx here would otherwise resolve as a breaker
     // "success" and the breaker would never trip on a real Ollama outage
-    // (2026-08-04 audit, same fix as GeminiSummarizer's).
+    // (2026-08-04 audit, same fix as GeminiSummarizerService's).
     const res = await this.caller.call(async () => {
       const response = await fetch(`${this.baseUrl}/api/embed`, {
         method: 'POST',

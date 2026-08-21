@@ -4,8 +4,8 @@ import { OrgPermission } from '@distributed-social-platform/shared-kernel'
 import { JwtAuthGuard } from '@/infrastructure/http/guards/jwt-auth.guard'
 import { RemoteOrgMembershipGuard } from '@/infrastructure/http/guards/remote-org-membership.guard'
 import { RequireOrgPermission } from '@/infrastructure/http/decorators/require-org-permission.decorator'
-import { SearchKnowledgeService } from '../application/queries/search-knowledge.service'
-import { SearchDto } from './schemas/search.schema'
+import { SearchKnowledgeService } from '../../application/queries/search-knowledge.service'
+import { SearchDto } from '../schemas/search.schema'
 
 @Controller('search')
 @UseGuards(JwtAuthGuard, RemoteOrgMembershipGuard)

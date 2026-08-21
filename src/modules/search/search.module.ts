@@ -9,7 +9,7 @@ import { IndexKnowledgeHandler } from './application/events/index-knowledge/inde
 import { SearchKnowledgeService } from './application/queries/search-knowledge.service'
 import { TextChunker } from './domain/services/text-chunker'
 import { EMBEDDING_SERVICE } from './domain/services/embedding.service'
-import { SEARCH_CHUNK_READER } from './domain/repositories/search-chunk.repository'
+import { SEARCH_CHUNK_READER } from './application/repositories/search-chunk.query-repository'
 import { PrismaSearchChunkQueryRepository } from './infrastructure/repositories/prisma-search-chunk.query-repository'
 import { KEYWORD_SEARCH_REPOSITORY } from './domain/repositories/keyword-search.repository'
 import { SUMMARIZER_SERVICE } from './domain/services/summarizer.service'
@@ -17,13 +17,13 @@ import { HttpEmbeddingService } from './infrastructure/services/http-embedding.s
 import { OllamaEmbeddingCaller } from './infrastructure/services/ollama-embedding.caller'
 import { ElasticsearchKeywordRepository } from './infrastructure/repositories/elasticsearch-keyword.repository'
 import { ElasticsearchSearchCaller } from './infrastructure/repositories/elasticsearch-search.caller'
-import { ClaudeSummarizer } from './infrastructure/services/claude-summarizer'
+import { ClaudeSummarizerService } from './infrastructure/services/claude-summarizer.service'
 import { ClaudeApiCaller } from './infrastructure/services/claude-api.caller'
-import { GeminiSummarizer } from './infrastructure/services/gemini-summarizer'
+import { GeminiSummarizerService } from './infrastructure/services/gemini-summarizer.service'
 import { GeminiApiCaller } from './infrastructure/services/gemini-api.caller'
 import { KnowledgeIndexerConsumer } from './infrastructure/consumers/knowledge-indexer.consumer'
 import { DlqReplayConsumerService } from './infrastructure/consumers/dlq-replay.consumer'
-import { SearchController } from './presentation/search.controller'
+import { SearchController } from './presentation/controllers/search.controller'
 
 @Module({
   controllers: [SearchController],
@@ -52,14 +52,17 @@ import { SearchController } from './presentation/search.controller'
     // Both summarizers are built (each with its own circuit breaker caller); the
     // port resolves to one per SUMMARIZER_PROVIDER — the swap the ISummarizerService port buys.
     ClaudeApiCaller,
-    ClaudeSummarizer,
+    ClaudeSummarizerService,
     GeminiApiCaller,
-    GeminiSummarizer,
+    GeminiSummarizerService,
     {
       provide: SUMMARIZER_SERVICE,
-      useFactory: (config: ConfigService, claude: ClaudeSummarizer, gemini: GeminiSummarizer) =>
-        config.get<string>('env.summarizerProvider') === 'gemini' ? gemini : claude,
-      inject: [ConfigService, ClaudeSummarizer, GeminiSummarizer],
+      useFactory: (
+        config: ConfigService,
+        claude: ClaudeSummarizerService,
+        gemini: GeminiSummarizerService,
+      ) => (config.get<string>('env.summarizerProvider') === 'gemini' ? gemini : claude),
+      inject: [ConfigService, ClaudeSummarizerService, GeminiSummarizerService],
     },
   ],
 })

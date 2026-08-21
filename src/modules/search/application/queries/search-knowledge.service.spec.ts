@@ -1,9 +1,6 @@
 import type { PinoLogger } from 'nestjs-pino'
 import type { IEmbeddingService } from '../../domain/services/embedding.service'
-import type {
-  ISearchChunkReader,
-  SearchHit,
-} from '../../domain/repositories/search-chunk.repository'
+import type { ISearchChunkReader, SearchHit } from '../repositories/search-chunk.query-repository'
 import type {
   IKeywordSearchRepository,
   KeywordHit,

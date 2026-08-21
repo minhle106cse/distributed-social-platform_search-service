@@ -31,7 +31,7 @@ const REQUEST_TIMEOUT_MS = 5000
  * resilience_patterns.md §3.1).
  */
 @Injectable()
-export class ClaudeSummarizer implements ISummarizerService {
+export class ClaudeSummarizerService implements ISummarizerService {
   private readonly client: Anthropic
   private readonly model: string
 

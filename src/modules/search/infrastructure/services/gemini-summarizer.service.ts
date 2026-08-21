@@ -24,7 +24,7 @@ const REQUEST_TIMEOUT_MS = 5000
  * in the module, with zero change to search/handler logic. Same `GeminiApiCaller`.
  */
 @Injectable()
-export class GeminiSummarizer implements ISummarizerService {
+export class GeminiSummarizerService implements ISummarizerService {
   private readonly apiKey: string
   private readonly model: string
 

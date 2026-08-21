@@ -4,7 +4,7 @@ import { PrismaService } from '@/infrastructure/database/prisma/prisma.service'
 import type {
   ISearchChunkReader,
   SearchHit,
-} from '../../domain/repositories/search-chunk.repository'
+} from '../../application/repositories/search-chunk.query-repository'
 
 function toVectorLiteral(v: number[]): string {
   return `[${v.join(',')}]`

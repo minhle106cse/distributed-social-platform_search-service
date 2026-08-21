@@ -1,9 +1,9 @@
-import { GeminiSummarizer } from './gemini-summarizer'
+import { GeminiSummarizerService } from './gemini-summarizer.service'
 import type { GeminiApiCaller } from './gemini-api.caller'
 import type { SummaryContext } from '../../domain/services/summarizer.service'
 
-describe('GeminiSummarizer', () => {
-  let summarizer: GeminiSummarizer
+describe('GeminiSummarizerService', () => {
+  let summarizer: GeminiSummarizerService
   let mockCaller: { call: jest.Mock }
   let mockConfig: { getOrThrow: jest.Mock }
   let fetchMock: jest.Mock
@@ -18,7 +18,10 @@ describe('GeminiSummarizer', () => {
     fetchMock = jest.fn()
     global.fetch = fetchMock as unknown as typeof fetch
 
-    summarizer = new GeminiSummarizer(mockConfig as any, mockCaller as unknown as GeminiApiCaller)
+    summarizer = new GeminiSummarizerService(
+      mockConfig as any,
+      mockCaller as unknown as GeminiApiCaller,
+    )
   })
 
   it('nên gọi Gemini qua caller.call() và trả về text + sources đã ghép', async () => {

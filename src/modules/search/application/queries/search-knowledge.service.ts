@@ -3,11 +3,8 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import { LogContext } from '@distributed-social-platform/shared-kernel'
 import type { IEmbeddingService } from '../../domain/services/embedding.service'
 import { EMBEDDING_SERVICE } from '../../domain/services/embedding.service'
-import type {
-  ISearchChunkReader,
-  SearchHit,
-} from '../../domain/repositories/search-chunk.repository'
-import { SEARCH_CHUNK_READER } from '../../domain/repositories/search-chunk.repository'
+import type { ISearchChunkReader, SearchHit } from '../repositories/search-chunk.query-repository'
+import { SEARCH_CHUNK_READER } from '../repositories/search-chunk.query-repository'
 import type {
   IKeywordSearchRepository,
   KeywordHit,

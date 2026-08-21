@@ -4,12 +4,12 @@ const mockAnthropicCtor = jest.fn().mockImplementation(() => ({
 }))
 jest.mock('@anthropic-ai/sdk', () => mockAnthropicCtor)
 
-import { ClaudeSummarizer } from './claude-summarizer'
+import { ClaudeSummarizerService } from './claude-summarizer.service'
 import type { ClaudeApiCaller } from './claude-api.caller'
 import type { SummaryContext } from '../../domain/services/summarizer.service'
 
-describe('ClaudeSummarizer', () => {
-  let summarizer: ClaudeSummarizer
+describe('ClaudeSummarizerService', () => {
+  let summarizer: ClaudeSummarizerService
   let mockCaller: { call: jest.Mock }
   let mockConfig: { getOrThrow: jest.Mock }
 
@@ -22,7 +22,10 @@ describe('ClaudeSummarizer', () => {
         key === 'env.anthropicApiKey' ? 'test-key' : 'claude-opus-4-8',
       ),
     }
-    summarizer = new ClaudeSummarizer(mockConfig as any, mockCaller as unknown as ClaudeApiCaller)
+    summarizer = new ClaudeSummarizerService(
+      mockConfig as any,
+      mockCaller as unknown as ClaudeApiCaller,
+    )
   })
 
   it('nên gọi Claude qua caller.call() (circuit breaker) và trả về text + sources đã ghép', async () => {
