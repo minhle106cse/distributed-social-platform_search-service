@@ -1,0 +1,8 @@
+# Mirrors the root repo's .gitattributes. A submodule is its own git repository and
+# does NOT inherit the parent's attributes — that gap is why a CRLF->LF slip in this
+# service showed up as a 363-line diff for a 12-line change (2026-08-24).
+* text=auto eol=lf
+
+*.cjs  text eol=lf
+*.py   text eol=lf
+*.sh   text eol=lf

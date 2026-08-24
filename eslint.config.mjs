@@ -116,11 +116,20 @@ export default tseslint.config(
                 '@/generated',
                 '@/generated/**',
                 'fastify',
-                '@/infrastructure/database/**',
-                '@/infrastructure/http/**',
+                // 2026-08-24: was the two-entry allowlist `@/infrastructure/database/**` +
+                // `@/infrastructure/http/**`, which left kafka/grpc/messaging/observability wide
+                // open — the identical hole that let core-api's AskAiHandler inject a concrete
+                // gRPC client with no port. Inverted to "everything in infrastructure/ is banned
+                // except cqrs" so a NEW infra folder is closed by default. The old message also
+                // promised an exemption for `@/infrastructure/kafka`, which no application file
+                // has ever used (Kafka consumers live in `infrastructure/consumers/`, not here) —
+                // dropped rather than carried forward as a standing hole.
+                '@/infrastructure/**',
+                '!@/infrastructure/cqrs',
+                '!@/infrastructure/cqrs/**',
               ],
               message:
-                'Application không được phụ thuộc ORM/HTTP/DB. Dùng repository interface; infra hợp lệ duy nhất là @/infrastructure/kafka và @/infrastructure/cqrs.',
+                'Application không được phụ thuộc infrastructure. Dùng port (domain/, application/repositories/) — infra hợp lệ duy nhất là @/infrastructure/cqrs (decorators).',
             },
           ],
         },
