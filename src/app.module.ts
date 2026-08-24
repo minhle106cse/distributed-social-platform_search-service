@@ -6,6 +6,7 @@ import { createLogger } from '@distributed-social-platform/shared-kernel'
 import { ConfigModule } from './config/config.module'
 import { PrismaModule } from './infrastructure/database/prisma/prisma.module'
 import { PrismaTxRunnerModule } from './infrastructure/database/prisma/prisma-tx-runner.module'
+import { GrpcModule } from './infrastructure/grpc/grpc.module'
 import { KafkaModule } from './infrastructure/kafka/kafka.module'
 import { HealthController } from './infrastructure/http/controllers/health.controller'
 import { TraceContextMiddleware } from './infrastructure/http/middlewares/trace-context.middleware'
@@ -22,6 +23,7 @@ import { SearchModule } from './modules/search/search.module'
     PrismaTxRunnerModule,
     KafkaModule,
     SearchModule,
+    GrpcModule,
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     LoggerModule.forRootAsync({
       useFactory: () => ({

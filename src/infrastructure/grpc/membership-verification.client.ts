@@ -1,65 +1,39 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import * as grpc from '@grpc/grpc-js'
-import {
-  MembershipVerificationClient as GeneratedMembershipVerificationClient,
-  type MembershipVerificationClient as IGeneratedMembershipVerificationClient,
-  attachInternalGrpcSecret,
-} from '@distributed-social-platform/shared-kernel'
+import { MembershipVerifier } from '@distributed-social-platform/shared-kernel'
 import { MembershipVerificationGrpcCaller } from './membership-verification-grpc.caller'
 
-const DEADLINE_MS = 3000
-
 /**
- * Client side of proto/membership.proto — search-service has no Membership
- * table of its own, so a caller-supplied X-Org-Id must be verified against
- * core-api before being trusted (IDOR fix, resilience_patterns.md).
- * Same hand-rolled convention as core-api's AuthProvisioningClient.
+ * Nest shell around shared-kernel's `MembershipVerifier` — search-service has no
+ * Membership table of its own, so a caller-supplied X-Org-Id must be verified
+ * against core-api before being trusted (IDOR fix, resilience_patterns.md).
+ *
+ * Everything that is not Nest-specific lives in the shared verifier: this file
+ * used to be a full hand-rolled gRPC client, byte-identical to notification-service's
+ * copy apart from its comment (2026-08-24 audit). What stays here is what must
+ * stay per-service — config resolution and this service's OWN breaker instance,
+ * so one service's outage cannot open the other's circuit.
  */
 @Injectable()
 export class MembershipVerificationClient implements OnModuleDestroy {
-  private readonly client: IGeneratedMembershipVerificationClient
-  private readonly sharedSecret: string
+  private readonly verifier: MembershipVerifier
 
-  constructor(
-    config: ConfigService,
-    private readonly caller: MembershipVerificationGrpcCaller,
-  ) {
-    this.sharedSecret = config.getOrThrow<string>('env.internalGrpcSharedSecret')
-    this.client = new GeneratedMembershipVerificationClient(
+  constructor(config: ConfigService, caller: MembershipVerificationGrpcCaller) {
+    this.verifier = new MembershipVerifier(
       config.getOrThrow<string>('env.coreGrpcUrl'),
-      grpc.credentials.createInsecure(),
+      config.getOrThrow<string>('env.internalGrpcSharedSecret'),
+      (fn) => caller.call(fn),
     )
   }
 
   onModuleDestroy(): void {
-    this.client.close()
-  }
-
-  private metadata(): grpc.Metadata {
-    return attachInternalGrpcSecret(new grpc.Metadata(), this.sharedSecret)
+    this.verifier.close()
   }
 
   async checkMembership(
     orgId: string,
     userId: string,
   ): Promise<{ isMember: boolean; permissions: string[] }> {
-    return this.caller.call(
-      () =>
-        new Promise<{ isMember: boolean; permissions: string[] }>((resolve, reject) => {
-          this.client.checkMembership(
-            { orgId, userId },
-            this.metadata(),
-            { deadline: Date.now() + DEADLINE_MS },
-            (err, response) => {
-              if (err) {
-                reject(err)
-                return
-              }
-              resolve({ isMember: response.isMember, permissions: response.permissions })
-            },
-          )
-        }),
-    )
+    return this.verifier.checkMembership(orgId, userId)
   }
 }

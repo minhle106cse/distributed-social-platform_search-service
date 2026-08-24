@@ -2,8 +2,6 @@ import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtAuthGuard } from '@/infrastructure/http/guards/jwt-auth.guard'
 import { RemoteOrgMembershipGuard } from '@/infrastructure/http/guards/remote-org-membership.guard'
-import { MembershipVerificationClient } from '@/infrastructure/grpc/membership-verification.client'
-import { MembershipVerificationGrpcCaller } from '@/infrastructure/grpc/membership-verification-grpc.caller'
 import { ElasticsearchClientService } from '@/infrastructure/elasticsearch/elasticsearch-client.service'
 import { IndexKnowledgeHandler } from './application/events/index-knowledge/index-knowledge.handler'
 import { SearchKnowledgeService } from './application/queries/search-knowledge.service'
@@ -23,6 +21,7 @@ import { GeminiSummarizerService } from './infrastructure/services/gemini-summar
 import { GeminiApiCaller } from './infrastructure/services/gemini-api.caller'
 import { KnowledgeIndexerConsumer } from './infrastructure/consumers/knowledge-indexer.consumer'
 import { DlqReplayConsumerService } from './infrastructure/consumers/dlq-replay.consumer'
+
 import { SearchController } from './presentation/controllers/search.controller'
 
 @Module({
@@ -30,8 +29,6 @@ import { SearchController } from './presentation/controllers/search.controller'
   providers: [
     JwtAuthGuard,
     RemoteOrgMembershipGuard,
-    MembershipVerificationGrpcCaller,
-    MembershipVerificationClient,
     ElasticsearchClientService,
     // Event indexing (consumer #2)
     IndexKnowledgeHandler,
@@ -65,5 +62,8 @@ import { SearchController } from './presentation/controllers/search.controller'
       inject: [ConfigService, ClaudeSummarizerService, GeminiSummarizerService],
     },
   ],
+  // For GrpcModule's RagQueryGrpcService — the gRPC server drives this service.
+  // Everything gRPC (client + server + bootstrap) moved to GrpcModule 2026-08-24.
+  exports: [SearchKnowledgeService],
 })
 export class SearchModule {}
