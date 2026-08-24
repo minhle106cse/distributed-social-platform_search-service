@@ -40,6 +40,10 @@ export const envValidationSchema = z.object({
   // — search-service has no Membership table of its own, so X-Org-Id must be
   // verified against core-api before being trusted (IDOR fix).
   CORE_GRPC_URL: z.string().default('localhost:50052'),
+  // gRPC SERVER port — search-service serves proto/ai-query.proto here for
+  // core-api's AI-Query Saga (Phase 5b). Distinct from CORE_GRPC_URL above,
+  // which is the client target for the opposite direction.
+  SEARCH_GRPC_PORT: z.coerce.number().default(50054),
   INTERNAL_GRPC_SHARED_SECRET: z.string().min(16),
 })
 

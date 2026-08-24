@@ -27,6 +27,8 @@ export class SearchController {
   @RequireOrgPermission(OrgPermission.KNOWLEDGE_READ)
   @Post()
   async search(@Body() dto: SearchDto, @Headers('x-org-id') orgId: string) {
-    return this.searchService.search(orgId, dto.query, dto.topK, dto.summarize)
+    // summarize: false, hard-coded — see search.schema.ts. The paid RAG summary
+    // is reachable only through core-api'''s AI-Query Saga over gRPC.
+    return this.searchService.search(orgId, dto.query, dto.topK, false)
   }
 }

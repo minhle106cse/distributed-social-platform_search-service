@@ -36,6 +36,7 @@ export const envConfig = registerAs('env', () => {
     geminiApiKey: env.GEMINI_API_KEY,
     geminiModel: env.GEMINI_MODEL,
     coreGrpcUrl: env.CORE_GRPC_URL,
+    grpcPort: env.SEARCH_GRPC_PORT,
     internalGrpcSharedSecret: env.INTERNAL_GRPC_SHARED_SECRET,
   }
 })
