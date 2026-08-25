@@ -13,6 +13,7 @@ export const envConfig = registerAs('env', () => {
     port: env.SEARCH_SERVICE_PORT,
     corsAllowedOrigins: env.CORS_ALLOWED_ORIGINS,
     // JWT_PUBLIC_KEY is base64-encoded in .env (same pattern as core-api)
+    redisUrl: env.REDIS_URL,
     jwtPublicKey: Buffer.from(env.JWT_PUBLIC_KEY, 'base64').toString('utf-8'),
     kafkaBrokers: env.KAFKA_BROKERS.split(','),
     kafkaClientId: env.SEARCH_KAFKA_CLIENT_ID,

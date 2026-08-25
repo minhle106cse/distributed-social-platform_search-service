@@ -12,7 +12,6 @@ function buildCall(secret: string | undefined, request: Record<string, unknown> 
       get: (key: string) => (key === 'x-internal-secret' && secret !== undefined ? [secret] : []),
     },
     request: { orgId: 'org-1', question: 'q', topK: 5, ...request },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any
 }
 

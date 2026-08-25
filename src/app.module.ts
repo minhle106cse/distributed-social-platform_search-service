@@ -4,6 +4,7 @@ import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD } from '@nestjs/core'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { createLogger } from '@distributed-social-platform/shared-kernel'
 import { ConfigModule } from './config/config.module'
+import { CacheModule } from '@/infrastructure/cache/cache.module'
 import { PrismaModule } from './infrastructure/database/prisma/prisma.module'
 import { PrismaTxRunnerModule } from './infrastructure/database/prisma/prisma-tx-runner.module'
 import { GrpcModule } from './infrastructure/grpc/grpc.module'
@@ -19,6 +20,7 @@ import { SearchModule } from './modules/search/search.module'
   controllers: [HealthController],
   imports: [
     ConfigModule,
+    CacheModule,
     PrismaModule,
     PrismaTxRunnerModule,
     KafkaModule,

@@ -8,10 +8,14 @@ import {
 } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import type { FastifyRequest } from 'fastify'
-import type { OrgPermissionValue } from '@distributed-social-platform/shared-kernel'
+import { MembershipVerifier } from '@distributed-social-platform/shared-kernel'
+import type {
+  MembershipCheckResult,
+  OrgPermissionValue,
+} from '@distributed-social-platform/shared-kernel'
 import type { JwtPayload } from './jwt-auth.guard'
-import { MembershipVerificationClient } from '@/infrastructure/grpc/membership-verification.client'
 import { ORG_PERMISSION_KEY } from '@/infrastructure/http/decorators/require-org-permission.decorator'
+import type { OrgContext } from '@/infrastructure/http/types/org-context.interface'
 
 /**
  * "Remote" distinguishes this from core-api's OrgGuard: that one checks
@@ -34,16 +38,21 @@ import { ORG_PERMISSION_KEY } from '@/infrastructure/http/decorators/require-org
  * request is rejected with 503 rather than silently allowed through — an
  * authz check that degrades to "allow" on infra failure is worse than no
  * check at all.
+ *
+ * Publishes the verified result as `request.org` (2026-08-25) so handlers stop
+ * re-reading the raw header — see OrgContext for why that mattered.
  */
 @Injectable()
 export class RemoteOrgMembershipGuard implements CanActivate {
   constructor(
-    private readonly membershipClient: MembershipVerificationClient,
+    private readonly membershipVerifier: MembershipVerifier,
     private readonly reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<FastifyRequest & { user?: JwtPayload }>()
+    const request = context
+      .switchToHttp()
+      .getRequest<FastifyRequest & { user?: JwtPayload; org?: OrgContext }>()
 
     const userId = request.user?.sub
     if (!userId) throw new UnauthorizedException()
@@ -51,22 +60,30 @@ export class RemoteOrgMembershipGuard implements CanActivate {
     const orgId = request.headers['x-org-id'] as string | undefined
     if (!orgId) throw new ForbiddenException('X-Org-Id header is required')
 
-    let result: { isMember: boolean; permissions: string[] }
+    let result: MembershipCheckResult
     try {
-      result = await this.membershipClient.checkMembership(orgId, userId)
+      result = await this.membershipVerifier.checkMembership(orgId, userId)
     } catch {
       throw new ServiceUnavailableException('Unable to verify organization membership')
     }
 
     if (!result.isMember) throw new ForbiddenException('You are not a member of this organization')
 
-    const requiredPermission = this.reflector.get<OrgPermissionValue>(
+    // getAllAndOverride (không phải get) — đọc metadata ở CẢ method lẫn class,
+    // method thắng. Bản cũ chỉ đọc getHandler(), nên decorator đặt ở class level
+    // bị bỏ qua ÂM THẦM, route tụt về membership-only mà không có dấu hiệu gì.
+    const requiredPermissions = this.reflector.getAllAndOverride<OrgPermissionValue[]>(
       ORG_PERMISSION_KEY,
-      context.getHandler(),
+      [context.getHandler(), context.getClass()],
     )
-    if (requiredPermission && !result.permissions.includes(requiredPermission)) {
-      throw new ForbiddenException(`Missing permission: ${requiredPermission}`)
+    // AND, không phải OR — khai báo nhiều permission nghĩa là cần đủ cả, giống
+    // core-api's OrgGuard. Metadata giờ luôn là mảng (decorator đã variadic hoá).
+    const missing = requiredPermissions?.filter((p) => !result.permissions.includes(p)) ?? []
+    if (missing.length > 0) {
+      throw new ForbiddenException(`Missing permission: ${missing.join(', ')}`)
     }
+
+    request.org = { orgId, permissions: result.permissions }
 
     return true
   }

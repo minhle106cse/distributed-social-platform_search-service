@@ -18,7 +18,7 @@ import { SearchKnowledgeService } from '@/modules/search/application/queries/sea
  * Saga calls this after it has reserved credit; this is the only caller.
  *
  * Lives in the SERVICE-WIDE `infrastructure/grpc/`, next to this service's gRPC
- * client half (MembershipVerificationClient), not under `modules/search/`
+ * client half (the MembershipVerifier provider), not under `modules/search/`
  * (where it sat until 2026-08-24). Both directions of one transport belong
  * together — that is already the convention in core-api, whose gRPC server
  * (MembershipVerificationGrpcService) and clients share one folder, and
