@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common'
-import { CACHE_STORE, RedisCacheStore } from './redis-cache.store'
+import { CACHE_STORE } from '@distributed-social-platform/shared-kernel'
+import { RedisCacheStore } from './redis-cache.store'
 
 /**
  * Redis-backed `ICacheStore` for search-service, exported under the port token so

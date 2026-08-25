@@ -1,10 +1,9 @@
 import { Global, Module, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { MembershipVerifier } from '@distributed-social-platform/shared-kernel'
+import { CACHE_STORE, MembershipVerifier } from '@distributed-social-platform/shared-kernel'
 import type { ICacheStore } from '@distributed-social-platform/shared-kernel'
 import { MembershipVerificationGrpcCaller } from './membership-verification-grpc.caller'
 import { RagQueryGrpcService } from './rag-query.grpc-service'
-import { CACHE_STORE } from '@/infrastructure/cache/redis-cache.store'
 import { GrpcServerBootstrap } from '@/bootstrap/grpc'
 import { SearchModule } from '@/modules/search/search.module'
 

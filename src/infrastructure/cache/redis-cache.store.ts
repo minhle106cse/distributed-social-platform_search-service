@@ -4,9 +4,6 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import Redis from 'ioredis'
 import { LogContext, type ICacheStore } from '@distributed-social-platform/shared-kernel'
 
-/** DI token for shared-kernel's `ICacheStore` port — the interface is a type, so it cannot be one. */
-export const CACHE_STORE = Symbol('CACHE_STORE')
-
 /**
  * Redis adapter behind shared-kernel's `ICacheStore`, used by search-service for
  * membership lookups (RemoteOrgMembershipGuard).
@@ -66,6 +63,16 @@ export class RedisCacheStore implements ICacheStore, OnModuleDestroy {
       await this.redis.set(key, value, 'PX', ttlMs)
     } catch (err) {
       this.logger.warn({ context: LogContext.CACHE, err, key }, 'Cache write failed — ignored')
+    }
+  }
+
+  async del(key: string): Promise<void> {
+    try {
+      await this.redis.del(key)
+    } catch (err) {
+      // Logged at warn, not debug: unlike a failed read or write this leaves a
+      // STALE entry readable until its TTL expires, so it is worth seeing.
+      this.logger.warn({ context: LogContext.CACHE, err, key }, 'Cache invalidation failed')
     }
   }
 
