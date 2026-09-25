@@ -22,7 +22,7 @@ export async function buildServer() {
   })
 
   app.useLogger(app.get(Logger))
-  app.setGlobalPrefix('api/v1', { exclude: ['health', 'metrics'] })
+  app.setGlobalPrefix('api/v1', { exclude: ['health', 'metrics', '.well-known/jwks.json'] })
   app.useGlobalPipes(new ZodValidationPipe())
   // No enableShutdownHooks() here — it calls app.close() with no timeout on
   // SIGTERM, so a hung request would block shutdown forever. main.ts owns

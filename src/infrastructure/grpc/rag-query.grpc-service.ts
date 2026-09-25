@@ -1,15 +1,17 @@
-import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { Inject, Injectable } from '@nestjs/common'
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import * as grpc from '@grpc/grpc-js'
 import {
   LogContext,
   RagOutcome,
   type RagQueryServer,
-  verifyInternalGrpcSecret,
-  readTraceparent,
-  startTraceContext,
-  runWithTraceContext,
+  type PublicKeyResolver,
+  InternalRpc,
+  InternalServiceName,
+  PUBLIC_KEY_RESOLVER,
+  InternalAssertion,
+  TraceparentMetadata,
+  TraceScope,
 } from '@distributed-social-platform/shared-kernel'
 import { SearchKnowledgeService } from '@/modules/search/application/queries/search-knowledge.service'
 
@@ -34,7 +36,8 @@ import { SearchKnowledgeService } from '@/modules/search/application/queries/sea
  * regression fixed in 2026-07-19. That fix was about a PUBLIC HTTP endpoint
  * trusting a client-supplied X-Org-Id; here the caller is core-api, which has
  * already run JwtAuthGuard + OrgGuard + the required org permissions before the
- * saga started, and `x-internal-secret` is the trust boundary. Checking again
+ * saga started, and the internal assertion verified below — issuer core-api,
+ * bound to this `orgId` — is the trust boundary. Checking again
  * would also mean search-service calling back into core-api
  * (RemoteOrgMembershipGuard) while core-api is blocked waiting on this call.
  *
@@ -51,16 +54,16 @@ export class RagQueryGrpcService implements RagQueryServer {
   [name: string]: grpc.UntypedHandleCall
   #searchService: SearchKnowledgeService
   #logger: PinoLogger
-  #internalGrpcSharedSecret: string
+  #resolver: PublicKeyResolver
 
   constructor(
     searchService: SearchKnowledgeService,
     @InjectPinoLogger(RagQueryGrpcService.name) logger: PinoLogger,
-    config: ConfigService,
+    @Inject(PUBLIC_KEY_RESOLVER) resolver: PublicKeyResolver,
   ) {
     this.#searchService = searchService
     this.#logger = logger
-    this.#internalGrpcSharedSecret = config.getOrThrow<string>('env.internalGrpcSharedSecret')
+    this.#resolver = resolver
   }
 
   query: RagQueryServer['query'] = (call, callback) => {
@@ -68,22 +71,34 @@ export class RagQueryGrpcService implements RagQueryServer {
     // 2026-08-24 this server never read it, so the trace died at the boundary of
     // the one call the AI-Query Saga actually charges for. Same shape as
     // AuthProvisioningGrpcService.
-    const traceCtx = startTraceContext(readTraceparent(call))
-    void runWithTraceContext(traceCtx, async () => {
-      if (!verifyInternalGrpcSecret(call, this.#internalGrpcSharedSecret)) {
+    const traceCtx = TraceScope.start(TraceparentMetadata.read(call))
+    void TraceScope.run(traceCtx, async () => {
+      const { orgId, question, topK } = call.request
+
+      try {
+        await InternalAssertion.verify({
+          token: InternalAssertion.read(call),
+          audience: InternalServiceName.SearchService,
+          method: InternalRpc.RagQuery,
+          allowedIssuers: [InternalServiceName.CoreApi],
+          resolver: this.#resolver,
+          // The assertion is bound to the org it was minted for — a token
+          // captured for one org cannot drive a RagQuery for another.
+          boundClaims: { orgId },
+        })
+      } catch (err) {
         // gRPC has no boundary interceptor equivalent to the HTTP one, so a
         // rejected call leaves no trace unless this branch logs it itself
         // (2026-07-25 gateway audit).
         this.#logger.warn(
-          { context: LogContext.GRPC },
-          'RagQuery gRPC call rejected — invalid internal secret',
+          { context: LogContext.GRPC, err },
+          'RagQuery gRPC call rejected — invalid internal assertion',
         )
-        callback({ code: grpc.status.UNAUTHENTICATED, message: 'Invalid internal secret' })
+        callback({ code: grpc.status.UNAUTHENTICATED, message: 'Invalid internal assertion' })
         return
       }
 
       try {
-        const { orgId, question, topK } = call.request
         const result = await this.#searchService.search(orgId, question, topK, true)
 
         // The whole reason this contract carries an outcome instead of the raw

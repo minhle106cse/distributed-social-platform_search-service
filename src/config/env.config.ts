@@ -1,5 +1,6 @@
 import { registerAs } from '@nestjs/config'
-import { validate } from './env.validation'
+import { InternalServiceName } from '@distributed-social-platform/shared-kernel'
+import { EnvValidation } from './env.validation'
 
 /**
  * Single source of truth for defaults is envValidationSchema — this factory
@@ -7,14 +8,12 @@ import { validate } from './env.validation'
  * re-declares a default value (that used to drift silently from the schema).
  */
 export const envConfig = registerAs('env', () => {
-  const env = validate(process.env)
+  const env = EnvValidation.validate(process.env)
   return {
     nodeEnv: env.NODE_ENV,
     port: env.SEARCH_SERVICE_PORT,
     corsAllowedOrigins: env.CORS_ALLOWED_ORIGINS,
-    // JWT_PUBLIC_KEY is base64-encoded in .env (same pattern as core-api)
     redisUrl: env.REDIS_URL,
-    jwtPublicKey: Buffer.from(env.JWT_PUBLIC_KEY, 'base64').toString('utf-8'),
     kafkaBrokers: env.KAFKA_BROKERS.split(','),
     kafkaClientId: env.SEARCH_KAFKA_CLIENT_ID,
     // Own consumer group (concern = search indexing) — separate from notification.
@@ -38,6 +37,13 @@ export const envConfig = registerAs('env', () => {
     geminiModel: env.GEMINI_MODEL,
     coreGrpcUrl: env.CORE_GRPC_URL,
     grpcPort: env.SEARCH_GRPC_PORT,
-    internalGrpcSharedSecret: env.INTERNAL_GRPC_SHARED_SECRET,
+    // Stored base64 so a multi-line PEM survives .env files and container env vars.
+    internalAssertionPrivateKey: Buffer.from(env.INTERNAL_ASSERTION_PRIVATE_KEY, 'base64').toString(
+      'utf-8',
+    ),
+    jwksUrls: {
+      [InternalServiceName.AuthService]: env.AUTH_JWKS_URL,
+      [InternalServiceName.CoreApi]: env.CORE_API_JWKS_URL,
+    },
   }
 })

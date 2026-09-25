@@ -1,6 +1,6 @@
 import { Injectable, NestMiddleware } from '@nestjs/common'
 import type { FastifyRequest } from 'fastify'
-import { runWithTraceContext, startTraceContext } from '@distributed-social-platform/shared-kernel'
+import { TraceScope } from '@distributed-social-platform/shared-kernel'
 
 // Opens the trace-context ALS for the WHOLE request — same reasoning as
 // core-api's TraceContextMiddleware (interceptor's Observable subscribe runs
@@ -13,6 +13,6 @@ export class TraceContextMiddleware implements NestMiddleware {
   use(req: FastifyRequest, _res: unknown, next: () => void): void {
     const header = req.headers['traceparent']
     const inbound = Array.isArray(header) ? header[0] : header
-    runWithTraceContext(startTraceContext(inbound), () => next())
+    TraceScope.run(TraceScope.start(inbound), () => next())
   }
 }

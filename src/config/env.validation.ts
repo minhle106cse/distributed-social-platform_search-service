@@ -9,7 +9,6 @@ export const envValidationSchema = z.object({
   // docker-compose's redis service. A cache miss (or an unreachable Redis) is
   // never fatal: the adapter degrades to a miss and the source is re-queried.
   REDIS_URL: z.string().url().default('redis://localhost:6379'),
-  JWT_PUBLIC_KEY: z.string().min(100),
   KAFKA_BROKERS: z.string().default('localhost:9092'),
   SEARCH_KAFKA_CLIENT_ID: z.string().default('search-service'),
   KAFKA_SEARCH_INDEXER_GROUP: z.string().default('search-service-indexer-group'),
@@ -48,13 +47,28 @@ export const envValidationSchema = z.object({
   // core-api's AI-Query Saga (Phase 5b). Distinct from CORE_GRPC_URL above,
   // which is the client target for the opposite direction.
   SEARCH_GRPC_PORT: z.coerce.number().default(50054),
-  INTERNAL_GRPC_SHARED_SECRET: z.string().min(16),
+
+  // Internal M2M gRPC auth — short-lived RS256 assertion per call (RFC 7523).
+  // search-service SIGNS its outbound MembershipVerification calls with its own
+  // private key (base64 PEM). It VERIFIES inbound RagQuery calls (and user
+  // access tokens) using keys fetched from the issuer's /.well-known/jwks.json.
+  INTERNAL_ASSERTION_PRIVATE_KEY: z.string().min(100),
+  AUTH_JWKS_URL: z.string().url().default('http://localhost:4001'),
+  CORE_API_JWKS_URL: z.string().url().default('http://localhost:4002'),
 })
 
-export function validate(config: Record<string, unknown>) {
-  const result = envValidationSchema.safeParse(config)
-  if (!result.success) {
-    throw new Error(`Environment variables validation failed: ${result.error.message}`)
+/**
+ * Parses and coerces process.env against `envValidationSchema`, failing startup
+ * on the first invalid variable. Static-only: a pure function of the env it is
+ * handed. Pass it to ConfigModule wrapped in an arrow — a static method handed
+ * over as a bare value trips @typescript-eslint/unbound-method.
+ */
+export class EnvValidation {
+  static validate(config: Record<string, unknown>) {
+    const result = envValidationSchema.safeParse(config)
+    if (!result.success) {
+      throw new Error(`Environment variables validation failed: ${result.error.message}`)
+    }
+    return result.data
   }
-  return result.data
 }

@@ -7,7 +7,7 @@ import type {
   RagSummary,
   SummaryContext,
 } from '../../domain/services/summarizer.service'
-import { RAG_SYSTEM_PROMPT, buildRagPrompt } from '../../domain/services/rag-prompt.builder'
+import { RagPromptBuilder } from '../../domain/services/rag-prompt.builder'
 
 // Fixed algorithm constant, same convention/value as HttpEmbeddingService's
 // REQUEST_TIMEOUT_MS — this is a synchronous search-hot-path call, not
@@ -52,8 +52,8 @@ export class ClaudeSummarizerService implements ISummarizerService {
       this.client.messages.create({
         model: this.model,
         max_tokens: 1024,
-        system: RAG_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: buildRagPrompt(query, context) }],
+        system: RagPromptBuilder.SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: RagPromptBuilder.build(query, context) }],
       }),
     )
 

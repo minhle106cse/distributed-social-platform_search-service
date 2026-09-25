@@ -1,15 +1,37 @@
-import type { ConfigService } from '@nestjs/config'
+import { generateKeyPairSync } from 'crypto'
 import type { PinoLogger } from 'nestjs-pino'
-import { RagOutcome } from '@distributed-social-platform/shared-kernel'
+import {
+  InternalRpc,
+  InternalServiceName,
+  RagOutcome,
+  InternalAssertion,
+  StaticKeyResolver,
+} from '@distributed-social-platform/shared-kernel'
 import type { SearchKnowledgeService } from '@/modules/search/application/queries/search-knowledge.service'
 import { RagQueryGrpcService } from './rag-query.grpc-service'
 
-const SHARED_SECRET = 'test-shared-secret'
+const coreKeys = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+})
+const coreSigner = InternalAssertion.createSigner({
+  issuer: InternalServiceName.CoreApi,
+  privateKey: coreKeys.privateKey,
+})
+const resolver = new StaticKeyResolver({ [InternalServiceName.CoreApi]: coreKeys.publicKey })
+const validAssertion = (orgId = 'org-1') =>
+  coreSigner.sign({
+    audience: InternalServiceName.SearchService,
+    method: InternalRpc.RagQuery,
+    claims: { orgId },
+  })
 
-function buildCall(secret: string | undefined, request: Record<string, unknown> = {}) {
+function buildCall(assertion: string | undefined, request: Record<string, unknown> = {}) {
   return {
     metadata: {
-      get: (key: string) => (key === 'x-internal-secret' && secret !== undefined ? [secret] : []),
+      get: (key: string) =>
+        key === 'x-internal-assertion' && assertion !== undefined ? [assertion] : [],
     },
     request: { orgId: 'org-1', question: 'q', topK: 5, ...request },
   } as any
@@ -35,27 +57,31 @@ describe('RagQueryGrpcService', () => {
       error: jest.fn(),
       debug: jest.fn(),
     } as unknown as jest.Mocked<PinoLogger>
-    const config = {
-      getOrThrow: jest.fn().mockReturnValue(SHARED_SECRET),
-    } as unknown as ConfigService
-    service = new RagQueryGrpcService(mockSearch, mockLogger, config)
+    service = new RagQueryGrpcService(mockSearch, mockLogger, resolver)
   })
 
-  async function call(secret = SHARED_SECRET) {
+  async function call(assertion = validAssertion()) {
     const callback = jest.fn()
-    service.query(buildCall(secret), callback)
+    service.query(buildCall(assertion), callback)
     await new Promise((r) => setImmediate(r))
     return callback
   }
 
-  it('nên từ chối + log warn khi internal secret sai, không chạy search', async () => {
-    const callback = await call('wrong-secret')
+  it('nên từ chối + log warn khi assertion sai, không chạy search', async () => {
+    const callback = await call('not-a-real-token')
 
     expect(mockSearch.search).not.toHaveBeenCalled()
     expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ context: 'GrpcLayer' }),
-      expect.stringContaining('invalid internal secret'),
+      expect.stringContaining('invalid internal assertion'),
     )
+    expect(callback).toHaveBeenCalledWith(expect.objectContaining({ code: 16 }))
+  })
+
+  it('nên từ chối assertion đúc cho org khác — không đọc chéo tenant', async () => {
+    const callback = await call(validAssertion('a-different-org'))
+
+    expect(mockSearch.search).not.toHaveBeenCalled()
     expect(callback).toHaveBeenCalledWith(expect.objectContaining({ code: 16 }))
   })
 

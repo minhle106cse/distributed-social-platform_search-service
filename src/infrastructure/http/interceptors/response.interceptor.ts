@@ -1,7 +1,7 @@
 import { FastifyRequest } from 'fastify'
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common'
 import { Observable, map } from 'rxjs'
-import { ApiResponse, buildSuccessBody } from '@distributed-social-platform/shared-kernel'
+import { ApiResponse, ResponseBody } from '@distributed-social-platform/shared-kernel'
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
@@ -11,13 +11,13 @@ export class ResponseInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((data) => {
         if (data instanceof ApiResponse) {
-          return buildSuccessBody({
+          return ResponseBody.success({
             data: data.data,
             message: data.message,
             requestId: req.id,
           })
         }
-        return buildSuccessBody({ data: data as unknown, requestId: req.id })
+        return ResponseBody.success({ data: data as unknown, requestId: req.id })
       }),
     )
   }

@@ -6,7 +6,7 @@ import type {
   RagSummary,
   SummaryContext,
 } from '../../domain/services/summarizer.service'
-import { RAG_SYSTEM_PROMPT, buildRagPrompt } from '../../domain/services/rag-prompt.builder'
+import { RagPromptBuilder } from '../../domain/services/rag-prompt.builder'
 
 interface GeminiResponse {
   candidates?: { content?: { parts?: { text?: string }[] } }[]
@@ -50,9 +50,9 @@ export class GeminiSummarizerService implements ISummarizerService {
         headers: { 'content-type': 'application/json', 'x-goog-api-key': this.apiKey },
         body: JSON.stringify({
           system_instruction: {
-            parts: [{ text: RAG_SYSTEM_PROMPT }],
+            parts: [{ text: RagPromptBuilder.SYSTEM_PROMPT }],
           },
-          contents: [{ parts: [{ text: buildRagPrompt(query, context) }] }],
+          contents: [{ parts: [{ text: RagPromptBuilder.build(query, context) }] }],
           generationConfig: { maxOutputTokens: 1024 },
         }),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),

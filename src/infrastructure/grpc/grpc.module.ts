@@ -1,7 +1,20 @@
 import { Global, Module, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { CACHE_STORE, MembershipVerifier } from '@distributed-social-platform/shared-kernel'
-import type { ICacheStore } from '@distributed-social-platform/shared-kernel'
+import { PinoLogger } from 'nestjs-pino'
+import {
+  CACHE_STORE,
+  INTERNAL_ASSERTION_SIGNER,
+  InternalServiceName,
+  LogContext,
+  MembershipVerifier,
+  PUBLIC_KEY_RESOLVER,
+  InternalAssertion,
+  JwksResolver,
+} from '@distributed-social-platform/shared-kernel'
+import type {
+  ICacheStore,
+  InternalAssertionSigner,
+} from '@distributed-social-platform/shared-kernel'
 import { MembershipVerificationGrpcCaller } from './membership-verification-grpc.caller'
 import { RagQueryGrpcService } from './rag-query.grpc-service'
 import { GrpcServerBootstrap } from '@/bootstrap/grpc'
@@ -43,26 +56,72 @@ import { SearchModule } from '@/modules/search/search.module'
   imports: [SearchModule],
   providers: [
     MembershipVerificationGrpcCaller,
+    // One signer per process (search-service's identity) — used by the outbound
+    // MembershipVerifier and published at /.well-known/jwks.json for core-api.
+    {
+      provide: INTERNAL_ASSERTION_SIGNER,
+      useFactory: (config: ConfigService) =>
+        InternalAssertion.createSigner({
+          issuer: InternalServiceName.SearchService,
+          privateKey: config.getOrThrow<string>('env.internalAssertionPrivateKey'),
+        }),
+      inject: [ConfigService],
+    },
+    // One resolver per process — verifies inbound RagQuery assertions and user
+    // access tokens, fetching keys from each issuer's JWKS endpoint.
+    {
+      provide: PUBLIC_KEY_RESOLVER,
+      useFactory: (config: ConfigService, cache: ICacheStore, logger: PinoLogger) =>
+        new JwksResolver({
+          jwksUrls: config.getOrThrow<Record<string, string>>('env.jwksUrls'),
+          store: cache,
+          onResolve: (issuer, source) => {
+            // env-fallback is unused (B2 removed the env keys); left as a
+            // guard rail if it is ever re-enabled.
+            // 'stale': the issuer's JWKS could not be refreshed and an EXPIRED key set
+            // is being served (JwksResolver `staleIfErrorMs`) — a key the issuer revoked
+            // meanwhile would still verify. Warn so an outage cannot hide it.
+            if (source === 'env-fallback' || source === 'stale') {
+              logger.warn(
+                { context: LogContext.GRPC, issuer },
+                `resolved '${issuer}' via ${source}`,
+              )
+            }
+          },
+        }),
+      inject: [ConfigService, CACHE_STORE, PinoLogger],
+    },
     {
       provide: MembershipVerifier,
       useFactory: (
         config: ConfigService,
         caller: MembershipVerificationGrpcCaller,
         cacheStore: ICacheStore,
+        signer: InternalAssertionSigner,
       ) =>
         MembershipVerifier.connect(config.getOrThrow<string>('env.coreGrpcUrl'), {
-          sharedSecret: config.getOrThrow<string>('env.internalGrpcSharedSecret'),
+          signer,
           call: (fn) => caller.call(fn),
           cache: { store: cacheStore },
         }),
-      inject: [ConfigService, MembershipVerificationGrpcCaller, CACHE_STORE],
+      inject: [
+        ConfigService,
+        MembershipVerificationGrpcCaller,
+        CACHE_STORE,
+        INTERNAL_ASSERTION_SIGNER,
+      ],
     },
     RagQueryGrpcService,
     GrpcServerBootstrap,
   ],
   // MembershipVerifier for RemoteOrgMembershipGuard; GrpcServerBootstrap for
-  // main.ts, which starts and stops the server with the app.
-  exports: [MembershipVerifier, GrpcServerBootstrap],
+  // main.ts; signer + resolver for the JWKS endpoint and the guards.
+  exports: [
+    MembershipVerifier,
+    GrpcServerBootstrap,
+    INTERNAL_ASSERTION_SIGNER,
+    PUBLIC_KEY_RESOLVER,
+  ],
 })
 export class GrpcModule implements OnModuleDestroy {
   // A factory-provided instance gets no lifecycle hooks of its own (its class is

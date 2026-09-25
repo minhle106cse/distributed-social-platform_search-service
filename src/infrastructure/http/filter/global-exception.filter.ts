@@ -4,8 +4,7 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import type { ErrorDetails } from '@distributed-social-platform/shared-kernel'
 import {
   ApplicationError,
-  buildErrorBody,
-  httpStatusToCode,
+  ResponseBody,
   LogContext,
 } from '@distributed-social-platform/shared-kernel'
 
@@ -13,16 +12,6 @@ interface HttpExceptionResponse {
   message?: string | string[]
   errors?: unknown
   code?: string
-}
-
-function isHttpExceptionResponse(value: unknown): value is HttpExceptionResponse {
-  return typeof value === 'object' && value !== null
-}
-
-function isErrorDetails(value: unknown): value is ErrorDetails {
-  if (value === undefined) return true
-  if (Array.isArray(value)) return true
-  return typeof value === 'object' && value !== null
 }
 
 @Injectable()
@@ -42,18 +31,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       status = exception.getStatus()
-      code = httpStatusToCode(status)
+      code = ResponseBody.codeForStatus(status)
       const response = exception.getResponse()
 
       if (typeof response === 'string') {
         message = response
-      } else if (isHttpExceptionResponse(response)) {
+      } else if (GlobalExceptionFilter.isHttpExceptionResponse(response)) {
         if (Array.isArray(response.message)) {
           message = response.message.join(', ')
         } else if (typeof response.message === 'string') {
           message = response.message
         }
-        if (isErrorDetails(response.errors)) {
+        if (GlobalExceptionFilter.isErrorDetails(response.errors)) {
           details = response.errors
         }
         if (typeof response.code === 'string') {
@@ -69,6 +58,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       this.logger.error({ context: LogContext.EXCEPTION, err: exception }, 'Unhandled exception')
     }
 
-    reply.status(status).send(buildErrorBody({ code, message, details, requestId: req.id }))
+    reply.status(status).send(ResponseBody.error({ code, message, details, requestId: req.id }))
+  }
+
+  private static isHttpExceptionResponse(value: unknown): value is HttpExceptionResponse {
+    return typeof value === 'object' && value !== null
+  }
+
+  private static isErrorDetails(value: unknown): value is ErrorDetails {
+    if (value === undefined) return true
+    if (Array.isArray(value)) return true
+    return typeof value === 'object' && value !== null
   }
 }

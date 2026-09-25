@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import { Producer } from 'kafkajs'
 import {
-  deadLetterTopic,
+  DeadLetterTopic,
   LogContext,
   type DeadLetterInput,
   type IDeadLetterProducer,
@@ -37,7 +37,7 @@ export class DeadLetterProducer implements IDeadLetterProducer, OnModuleInit, On
   }
 
   async send(input: DeadLetterInput): Promise<void> {
-    const dlqTopic = deadLetterTopic(input.topic)
+    const dlqTopic = DeadLetterTopic.nameFor(input.topic)
 
     await this.producer.send({
       topic: dlqTopic,

@@ -5,12 +5,6 @@ import type {
   InsertChunkRow,
 } from '../../domain/repositories/search-chunk.repository'
 
-// pgvector has no Prisma type — vectors are read/written via raw SQL. A vector
-// literal is '[f1,f2,...]' cast to ::vector.
-function toVectorLiteral(v: number[]): string {
-  return `[${v.join(',')}]`
-}
-
 /**
  * Built per-transaction by `SearchTxScopeFactory` (ADR-0001).
  *
@@ -26,7 +20,7 @@ export class PrismaSearchChunkRepository implements ISearchChunkRepository {
     await this.db.knowledgeChunk.deleteMany({ where: { knowledgeItemId: itemId } })
 
     for (const r of rows) {
-      const vec = toVectorLiteral(r.embedding)
+      const vec = PrismaSearchChunkRepository.toVectorLiteral(r.embedding)
       await this.db.$executeRaw`
         INSERT INTO knowledge_chunks
           (id, knowledge_item_id, org_id, space_id, chunk_index, content, title_snapshot, embedding, created_at)
@@ -36,5 +30,11 @@ export class PrismaSearchChunkRepository implements ISearchChunkRepository {
     }
 
     if (rows.length > 0) chunksIndexedCounter.inc(rows.length)
+  }
+
+  // pgvector has no Prisma type — vectors are read/written via raw SQL. A vector
+  // literal is '[f1,f2,...]' cast to ::vector.
+  private static toVectorLiteral(v: number[]): string {
+    return `[${v.join(',')}]`
   }
 }

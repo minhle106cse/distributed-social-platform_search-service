@@ -6,10 +6,6 @@ import type {
   SearchHit,
 } from '../../application/repositories/search-chunk.query-repository'
 
-function toVectorLiteral(v: number[]): string {
-  return `[${v.join(',')}]`
-}
-
 /**
  * Read side of the pgvector index — plain client, no transaction. This is the
  * search hot path: it runs on every query and must not take a write connection.
@@ -19,7 +15,7 @@ export class PrismaSearchChunkQueryRepository implements ISearchChunkReader {
   constructor(private readonly prisma: PrismaService) {}
 
   async semanticSearch(orgId: string, queryVec: number[], topK: number): Promise<SearchHit[]> {
-    const vec = toVectorLiteral(queryVec)
+    const vec = PrismaSearchChunkQueryRepository.toVectorLiteral(queryVec)
     const rows = await this.prisma.client.$queryRaw<
       { knowledge_item_id: string; content: string; title_snapshot: string; score: number }[]
     >(Prisma.sql`
@@ -37,5 +33,9 @@ export class PrismaSearchChunkQueryRepository implements ISearchChunkReader {
       titleSnapshot: r.title_snapshot,
       score: r.score,
     }))
+  }
+
+  private static toVectorLiteral(v: number[]): string {
+    return `[${v.join(',')}]`
   }
 }

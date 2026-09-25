@@ -2,7 +2,7 @@ import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common'
 import { LoggerModule } from 'nestjs-pino'
 import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD } from '@nestjs/core'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
-import { createLogger } from '@distributed-social-platform/shared-kernel'
+import { LoggerFactory } from '@distributed-social-platform/shared-kernel'
 import { ConfigModule } from './config/config.module'
 import { CacheModule } from '@/infrastructure/cache/cache.module'
 import { PrismaModule } from './infrastructure/database/prisma/prisma.module'
@@ -30,7 +30,7 @@ import { SearchModule } from './modules/search/search.module'
     LoggerModule.forRootAsync({
       useFactory: () => ({
         pinoHttp: {
-          logger: createLogger('search-service'),
+          logger: LoggerFactory.create('search-service'),
           autoLogging: {
             ignore: (req) => req.url === '/health' || req.url === '/metrics',
           },

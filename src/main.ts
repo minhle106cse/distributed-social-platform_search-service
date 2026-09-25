@@ -46,7 +46,7 @@ async function bootstrap() {
         logger.log('Shutdown complete', LogContext.LIFECYCLE)
         process.exit(0)
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         // nestjs-pino's Logger.call() treats the LAST trailing arg as
         // `context`, not a message — (err, 'text') silently made 'text' the
         // context and DROPPED the message (verified with real pino, 2026-07-25).

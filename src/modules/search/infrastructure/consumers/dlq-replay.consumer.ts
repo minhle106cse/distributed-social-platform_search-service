@@ -4,7 +4,7 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import {
   DlqReplayConsumer as SharedDlqReplayConsumer,
   KafkaTopic,
-  deadLetterTopic,
+  DeadLetterTopic,
   type DlqEachMessagePayload,
 } from '@distributed-social-platform/shared-kernel'
 import { KafkaClientService } from '@/infrastructure/kafka/kafka-client.service'
@@ -40,7 +40,7 @@ export class DlqReplayConsumerService implements OnModuleInit, OnModuleDestroy {
     this.runner = new SharedDlqReplayConsumer({
       consumer: kafkaClient.createConsumer<DlqEachMessagePayload>({ groupId }),
       producer: this.producer,
-      dlqTopics: [deadLetterTopic(KafkaTopic.KNOWLEDGE_EVENTS)],
+      dlqTopics: [DeadLetterTopic.nameFor(KafkaTopic.KNOWLEDGE_EVENTS)],
       logger,
       maxReplays: config.getOrThrow<number>('env.kafkaDlqMaxReplays'),
       baseReplayDelayMs: config.getOrThrow<number>('env.kafkaDlqReplayBaseDelayMs'),
